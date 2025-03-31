@@ -203,6 +203,24 @@ missing_percentage <- combined_data_resampled %>%
 # View the result
 missing_percentage
 
+# Step 2.b: Calculate missing percentage per ID (only ID, not month)
+
+missing_percentage_per_ID <- combined_data_resampled %>%
+  group_by(ID) %>%  # Only group by ID (remove Month)
+  summarise(
+    Total_Entries = n(),  # Total number of entries per ID
+    Missing_Count = sum((Missing_Count == 1), na.rm = TRUE),  # Count of missing values per ID
+    Missing_Percentage = (Missing_Count / Total_Entries) * 100,  # Calculate missing percentage
+    Non_Missing_Percentage = 100 - Missing_Percentage,
+    .groups = "drop"
+  )
+
+# View the result
+missing_percentage_per_ID
+
+
+
+
 ### trouble shooting
 ID112 <- combined_data_continuous %>% 
   filter(ID=="112")
