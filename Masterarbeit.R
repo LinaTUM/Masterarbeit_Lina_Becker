@@ -66,6 +66,31 @@ combined_data <- combined_data %>%
     `Scan glucose levels (mg/dl)` = Scan.Glucose.mg.dL
   )
 
+## Get an overview of distribution of historic and scanned glucose data
+# Filter out rows where both glucose values are missing
+glucose_data <- combined_data %>%
+  filter(!is.na(`Glucose levels (mg/dl)`) | !is.na(`Scan glucose levels (mg/dl)`))
+
+# Create the plot
+ggplot(glucose_data, aes(x = Timestamp)) +
+  # Line for historic glucose values
+  geom_line(aes(y = `Glucose levels (mg/dl)`), color = "blue", size = 1, alpha = 0.7) +
+  
+  # Points for scan glucose values
+  geom_point(aes(y = `Scan glucose levels (mg/dl)`), color = "red", size = 1, alpha = 0.8) +
+  
+  # Labels & Formatting
+  labs(
+    title = "Glucose Measurements Over Time",
+    subtitle = "Blue = Historic Glucose (Every 5min), Red = Scan Glucose (User Scans)",
+    x = "Time",
+    y = "Glucose Level (mg/dL)"
+  ) +
+  
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
 # View the updated column names (optional)
 colnames(combined_data)
 
@@ -79,6 +104,11 @@ str(combined_data$Timestamp)
 combined_data <- combined_data %>%
   select(1:3, Timestamp, everything())%>%
   arrange(Timestamp)
+
+#Check all values of Record Types
+
+summary(combined_data$Record.Type)
+table(combined_data$Record.Type)
 
 # Process the data as specified
 combined_data <- combined_data %>%
@@ -494,3 +524,27 @@ ggplotly(p) %>%
 
 setwd("/Users/linabecker/Documents/M.Sc. Health Science/Masterarbeit/Masterarbeit")
 ggsave(paste0(current_date,".24_hour_glucose_profiles_by_ID.png"), plot = p, width = 15, height = 10, bg = "white")
+
+#### same calculations with cleaned data ####
+cleaned_data 
+
+# Add a column to indicate missing or non-finite values (1 = Missing/Non-finite, 0 = Present)
+cleaned_data <- cleaned_data %>%
+  mutate(
+    Missing = ifelse(is.na(`Glucose (mg/dl)`) | !is.finite(`Glucose (mg/dl)`), 1, 0)
+  )
+
+# Check how many cloumns have the value 1 in Missings
+sum(cleaned_data$Missing == 1)
+
+# Step 1: Determine the start date for each ID (earliest timestamp)
+id_start_dates <- cleaned_data %>%
+  group_by(ID) %>%
+  summarise(Start_Date = min(Timestamp, na.rm = TRUE)) #, .groups = "drop"
+
+# Step 2: Join the start date back to the main data and filter to include only records from the start date onward
+cleaned_data_filtered <- cleaned_data %>%
+  left_join(id_start_dates, by = "ID") %>%
+  filter(Timestamp >= Start_Date | is.na(Timestamp))  # Include rows where Timestamp is NA as well
+
+
