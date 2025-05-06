@@ -1,0 +1,215 @@
+---
+title: "Masterarbeit"
+format: html
+editor: visual
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+1 + 1
+```
+
+You can add options to executable code like this
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
+## Load necessary libraries
+```{r}
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+library(tidyr)
+```
+## Data Reading
+**Description:** Define directory and combine single data files into one dataset
+```{r}
+# Define the directory containing the files
+data_directory <- "/Users/linabecker/Documents/M.Sc. Health Science/Masterarbeit/Masterarbeit"
+
+# List all CSV files in the directory
+file_list <- list.files(path = data_directory, pattern = "*.csv", full.names = TRUE)
+
+# Initialize an empty list to store individual data frames
+data_list <- list()
+
+# Loop over each file to read, process, and add to data_list
+for (file in file_list) {
+  # Extract the ID from the filename
+  id <- sub("_.*", "", basename(file))
+  
+  # Read the file, skipping the first row and using the second row as the header
+  df <- read.csv(file, skip = 1, header = TRUE)
+  
+  # Add the ID column
+  df$ID <- id
+  
+  # Append the processed data frame to the list
+  data_list[[length(data_list) + 1]] <- df
+}
+
+# Combine all individual data frames into one
+combined_data <- bind_rows(data_list)
+
+# View the combined data 
+head(combined_data)
+
+# Get a summary of unique IDs
+id_summary <- combined_data %>%
+  distinct(ID) %>%
+  count()
+
+# Display the summary
+id_summary
+
+# Convert ID to a factor
+combined_data <- combined_data %>%
+  mutate(ID = as.factor(ID))
+
+# Rename the columns
+combined_data <- combined_data %>%
+  rename(
+    DeviceTimestamp = Device.Timestamp,
+    `Glucose levels (mg/dl)` = Historic.Glucose.mg.dL,
+    `Scan glucose levels (mg/dl)` = Scan.Glucose.mg.dL
+  )
+
+
+
+# View the updated column names (optional)
+colnames(combined_data)
+
+# Convert the Timestamp column to POSIXct format
+combined_data$Timestamp <- as.POSIXct(combined_data$DeviceTimestamp, format = "%d-%m-%Y %H:%M")
+
+# Verify the structure to confirm the change
+str(combined_data$Timestamp)
+
+# Reorder columns, placing Timestamp as the fourth column
+combined_data <- combined_data %>%
+  select(1:3, Timestamp, everything())%>%
+  arrange(Timestamp)
+
+#Check all values of Record Types
+
+summary(combined_data$Record.Type)
+table(combined_data$Record.Type)
+
+# Process the data as specified
+combined_data <- combined_data %>%
+  # Remove rows where Record.Type is 5 or 6
+  filter(!(Record.Type %in% c(5, 6))) %>%
+  # Create a new column 'Glucose level'
+  mutate(
+    "Glucose (mg/dl)" = if_else(
+      !is.na(`Glucose levels (mg/dl)`), 
+      `Glucose levels (mg/dl)`, 
+      `Scan glucose levels (mg/dl)`
+    )
+  )
+
+# View the first few rows to verify
+head(combined_data)
+```
+
+**Description:** Get an overview of distribution of historic and scanned glucose data
+```{r}
+# Filter out rows where both glucose values are missing
+glucose_data <- combined_data %>%
+  filter(!is.na(`Glucose levels (mg/dl)`) | !is.na(`Scan glucose levels (mg/dl)`))
+
+# Plot all participants in one faceted plot
+ggplot(glucose_data, aes(x = Timestamp)) +
+  geom_line(aes(y = `Glucose levels (mg/dl)`), color = "blue", size = 0.5, alpha = 0.7) +
+  geom_point(aes(y = `Scan glucose levels (mg/dl)`), color = "red", size = 0.1, alpha = 0.9) +
+  facet_wrap(~ ID, scales = "free_x") +  # One plot per ID, flexible x-axis
+  labs(
+    title = "Glucose Measurements Over Time by Participant",
+    subtitle = "Blue = Historic Glucose (5 min), Red = Scan Glucose (manual scan)",
+    x = "Time",
+    y = "Glucose Level (mg/dL)"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 6),
+    strip.text = element_text(face = "bold", size = 8),
+    plot.title = element_text(size = 14, face = "bold"),
+    plot.subtitle = element_text(size = 10)
+  )
+```
+## Data Cleaning
+
+**Description:** filter out all columns not needed and filter out all glucose levels, which are not historic glucose levels (which are scan glucose levels)
+
+
+
+```{r}
+# Filter out rows with NA or infinite values in Timestamp and Glucose levels columns
+cleaned_data <- combined_data %>%
+  filter(!is.na(Timestamp), !is.na(`Glucose levels (mg/dl)`), is.finite(`Glucose levels (mg/dl)`))
+
+head(cleaned_data)
+```
+
+```{r}
+cleaned_data <- cleaned_data %>%
+  select(-Rapid.Acting.Insulin..units., -Ketone.mmol.L, -Non.numeric.Rapid.Acting.Insulin, -Non.numeric.Food, -Carbohydrates..grams.,-Carbohydrates..servings., -Non.numeric.Long.Acting.Insulin, -Long.Acting.Insulin.Value..units., -Notes, -Strip.Glucose.mg.dL, -Meal.Insulin..units., -Correction.Insulin..units., -User.Change.Insulin..units.)
+```
+
+**Description:** check if there are missings in glucose values
+
+```{r}
+# Add a column to indicate missing or non-finite values in Glucose (1 = Missing/Non-finite, 0 = Present)
+cleaned_data <- cleaned_data %>%
+  mutate(
+    Missing = ifelse(is.na(`Glucose (mg/dl)`) | !is.finite(`Glucose (mg/dl)`), 1, 0)
+  )
+
+# Check how many columns have the value 1 in Missings
+sum(cleaned_data$Missing == 1)
+
+```
+
+**Description**: Create a table showing an overview of expected number versus real number of measurements per ID per Month
+
+```{r}
+# Step 1: Determine the start date for each ID (earliest timestamp)
+id_start_dates <- cleaned_data %>%
+  group_by(ID) %>%
+  summarise(Start_Date = min(Timestamp, na.rm = TRUE) , .groups = "drop")
+
+# Step 2: Join the start date back to the main data and filter to include only records from the start date onward
+cleaned_data_filtered <- cleaned_data %>%
+  left_join(id_start_dates, by = "ID") %>%
+  filter(Timestamp >= Start_Date | is.na(Timestamp))  # Include rows where Timestamp is NA as well
+```
+**Description**: Table with overview
+```{r}
+# Schritt 1: Füge Monat und Jahr-Spalte hinzu
+glucose_monthly_summary <- cleaned_data %>%
+  mutate(
+    Month = floor_date(Timestamp, "month")
+  ) %>%
+  group_by(ID, Month) %>%
+  summarise(
+    Measured_Values = n(),  # Tatsächlich gemessene Werte
+    Days_Observed = n_distinct(as.Date(Timestamp)),  # Anzahl untersuchter Tage im Monat
+    Expected_Values = Days_Observed * 288,  # Erwartet: 288 Werte pro Tag
+    Missing_Values = Expected_Values - Measured_Values,
+    Missing_Percentage = round((Missing_Values / Expected_Values) * 100, 2),
+    .groups = "drop"
+  )
+
+# Ausgabe anzeigen
+glucose_monthly_summary
+```
