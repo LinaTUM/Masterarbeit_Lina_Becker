@@ -88,7 +88,56 @@ ggplot(glucose_data, aes(x = Timestamp)) +
   ) +
   
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)+
+# Facet the plot by participant ID
+facet_wrap(~ ID, scales = "free_x"))
+
+
+# Loop through each participant and display their plot
+for (participant_id in unique(glucose_data$ID)) {
+  
+  # Filter data for this ID
+  individual_data <- glucose_data %>% filter(ID == participant_id)
+  
+  # Create the plot
+  p <- ggplot(individual_data, aes(x = Timestamp)) +
+    geom_line(aes(y = `Glucose levels (mg/dl)`), color = "blue", size = 1, alpha = 0.7) +
+    geom_point(aes(y = `Scan glucose levels (mg/dl)`), color = "red", size = 1, alpha = 0.8) +
+    labs(
+      title = paste("Glucose Measurements - ID:", participant_id),
+      subtitle = "Blue = Historic Glucose (5 min), Red = Scan Glucose (User-initiated)",
+      x = "Time",
+      y = "Glucose Level (mg/dL)"
+    ) +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+  # Display the plot
+  print(p)
+}
+
+# Make sure your glucose_data has the right structure and both glucose types
+glucose_data <- combined_data %>%
+  filter(!is.na(`Glucose levels (mg/dl)`) | !is.na(`Scan glucose levels (mg/dl)`))
+
+# Plot all participants in one faceted plot
+ggplot(glucose_data, aes(x = Timestamp)) +
+  geom_line(aes(y = `Glucose levels (mg/dl)`), color = "blue", size = 0.5, alpha = 0.7) +
+  geom_point(aes(y = `Scan glucose levels (mg/dl)`), color = "red", size = 0.1, alpha = 0.9) +
+  facet_wrap(~ ID, scales = "free_x") +  # One plot per ID, flexible x-axis
+  labs(
+    title = "Glucose Measurements Over Time by Participant",
+    subtitle = "Blue = Historic Glucose (5 min), Red = Scan Glucose (manual scan)",
+    x = "Time",
+    y = "Glucose Level (mg/dL)"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 6),
+    strip.text = element_text(face = "bold", size = 8),
+    plot.title = element_text(size = 14, face = "bold"),
+    plot.subtitle = element_text(size = 10)
+  )
 
 
 # View the updated column names (optional)

@@ -30,6 +30,7 @@ library(dplyr)
 library(lubridate)
 library(ggplot2)
 library(tidyr)
+library(knitr)
 ```
 ## Data Reading
 **Description:** Define directory and combine single data files into one dataset
@@ -213,3 +214,1105 @@ glucose_monthly_summary <- cleaned_data %>%
 # Ausgabe anzeigen
 glucose_monthly_summary
 ```
+
+**Description**: Add months to table when no measurement took place
+```{r}
+
+# Schritt 1: Monat berechnen
+data_with_month <- cleaned_data %>%
+  mutate(
+    Month = floor_date(Timestamp, "month")
+  )
+
+# Schritt 2: Erster Monat pro ID
+first_months <- data_with_month %>%
+  group_by(ID) %>%
+  summarise(First_Month = min(Month), .groups = "drop")
+
+# Schritt 3: Vollständigen Monatsraster erzeugen (13 Monate ab Start)
+full_months_per_id <- first_months %>%
+  rowwise() %>%
+  mutate(
+    Month = list(seq(First_Month, by = "1 month", length.out = 13))
+  ) %>%
+  unnest(Month) %>%
+  ungroup()
+
+# Schritt 4: Tatsächlich gemessene Werte zählen pro ID und Monat
+monthly_counts <- data_with_month %>%
+  group_by(ID, Month) %>%
+  summarise(
+    Measured_Values = n(),
+    Days_Observed = n_distinct(as.Date(Timestamp)),
+    .groups = "drop"
+  )
+
+# Schritt 5: Join mit vollständigem Raster + fehlende Werte auffüllen
+monthly_summary <- full_months_per_id %>%
+  left_join(monthly_counts, by = c("ID", "Month")) %>%
+  mutate(
+    Measured_Values = replace_na(Measured_Values, 0),
+    Days_Observed = replace_na(Days_Observed, 0),
+    
+    Expected_Values = days_in_month(Month) * 24 * 12,  # 12 Messungen pro Stunde bei 5-minütiger Frequenz
+
+    Missing_Values = Expected_Values - Measured_Values,
+    Missing_Percentage = ifelse(Expected_Values == 0, NA, round((Missing_Values / Expected_Values) * 100, 2))
+  )
+
+
+```
+**Description**: Duplicates were found, because Missings were minus --> remove duplicates using cleaned_data_filtered
+
+```{r}
+#check for duplicates first
+cleaned_data_filtered %>%
+  group_by(ID, Timestamp) %>%
+  filter(n() > 1)
+```
+
+### Duplicates
+
+**Description**: Check for duplicates
+```{r}
+# All Duplicates
+dup_timestamps <- cleaned_data_filtered %>%
+  group_by(ID, Timestamp) %>%
+  filter(n() > 1) %>%
+  arrange(ID, Timestamp)
+
+```
+
+#### Identical/exact duplicates
+```{r}
+exact_duplicates <- dup_timestamps %>%
+  group_by(ID, Timestamp, `Glucose (mg/dl)`, Serial.Number) %>%
+  filter(n() > 1) %>%
+  ungroup()
+
+exact_duplicates
+```
+
+#### Duplicates with same Serial.Number but different glucose value
+
+```{r}
+conflicting_duplicates <- dup_timestamps %>%
+  group_by(ID, Timestamp, Serial.Number) %>%
+  filter(n_distinct(`Glucose (mg/dl)`) > 1) %>%
+  ungroup()
+
+conflict_summary <- conflicting_duplicates %>%
+  count(ID, name = "Conflicting_Measurements")
+
+conflict_summary
+```
+
+**Description:** Plotting those exact duplicates
+```{r}
+# 1. laufende Nummerierung erstellen
+conflicting_duplicates <- conflicting_duplicates %>%
+  group_by(ID, Timestamp, Serial.Number) %>%
+  filter(n_distinct(`Glucose (mg/dl)`) > 1) %>%
+  mutate(Glucose_Row = row_number()) %>%
+  ungroup()
+
+# 2. In Wide-Format bringen (zwei Glucose-Werte nebeneinander)
+conflicts_wide <- conflicting_duplicates %>%
+  select(ID, Timestamp, Serial.Number, `Glucose (mg/dl)`, Glucose_Row) %>%
+  pivot_wider(
+    names_from = Glucose_Row,
+    values_from = `Glucose (mg/dl)`,
+    names_prefix = "Glucose_"
+  ) %>%
+  filter(!is.na(Glucose_1) & !is.na(Glucose_2))
+
+# 3. Scatterplot: Glucose_1 vs Glucose_2
+
+
+ggplot(conflicts_wide, aes(x = Glucose_1, y = Glucose_2, color = ID)) +
+  geom_point(alpha = 0.7) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray") +
+  labs(
+    title = "Comparison of glucose values in conflicting duplicates \n(same timestamp, same serialnumber)",
+    x = "Glucose Value 1",
+    y = "Glucose Value 2",
+    color = "ID"
+  ) +
+  theme_minimal()
+```
+
+**Description:** Checking differences of duplicates
+```{r}
+conflicts_wide <- conflicts_wide %>%
+  mutate(duplicate_difference = Glucose_2 - Glucose_1)
+
+  ggplot(conflicts_wide, aes(x = duplicate_difference, fill = ID)) +
+    geom_histogram(binwidth = 1, alpha = 0.6, position = "identity") +
+    geom_vline(xintercept = 0, linetype = "dashed", color = "gray") +
+    labs(
+      title = "Differences between Glucose Values",
+      x = "Difference: Glucose (mg/dl)",
+      y = "Number",
+      fill = "ID"
+    ) +
+    theme_minimal()
+```  
+
+#### Duplicates with different Serial.Number but same glucose value
+```{r}
+duplicates_diff_serial <- dup_timestamps %>%
+  group_by(ID, Timestamp, `Glucose (mg/dl)`) %>%
+  filter(n_distinct(Serial.Number) > 1) %>%
+  ungroup()
+
+summary_diff_serial <- duplicates_diff_serial %>%
+  count(ID, name = "Same_Glucose_Diff_Serial_Count")
+
+summary_diff_serial
+```
+
+### Irregular Timestamps: Less than 4min, more than 6min
+
+**Description**: Calculate timegaps
+
+```{r}
+time_gaps <- cleaned_data_filtered %>%
+  arrange(ID, Timestamp) %>%
+  group_by(ID) %>%
+  mutate(
+    Time_Diff_Minutes = as.numeric(difftime(Timestamp, lag(Timestamp), units = "mins"))
+  ) %>%
+  ungroup()
+
+time_gaps
+```
+
+#### Gaps: more than 6min
+
+```{r}
+gaps_over_6min <- time_gaps %>%
+  filter(!is.na(Time_Diff_Minutes) & Time_Diff_Minutes > 6)
+
+gaps_over_6min
+
+summary_over_6min <- gaps_over_6min %>%
+  count (ID, name = "Gaps_More_Than_6min")
+
+summary_over_6min_detail <- gaps_over_6min %>%
+  group_by(ID, Time_Diff_Minutes) %>%
+  summarise(
+    Count = n(),
+    .groups = "drop"
+  ) %>%
+  arrange(ID, Time_Diff_Minutes)
+```
+
+#### Gaps: between 1 and 3min
+```{r}
+gaps_1_to_3_min <- time_gaps %>%
+  filter(!is.na(Time_Diff_Minutes) & Time_Diff_Minutes >= 1 & Time_Diff_Minutes <= 3)
+
+summary_1_to_3_min <- gaps_1_to_3_min %>%
+  count(ID, name = "Gaps_Between_1_and_3min")
+```
+**Description**: Categorize time gaps
+```{r}
+time_gaps_plot <- time_gaps %>%
+  mutate(
+    Gap_Category = case_when(
+      is.na(Time_Diff_Minutes) ~ NA_character_,
+      Time_Diff_Minutes >= 1 & Time_Diff_Minutes <= 3 ~ "Between 1 and 3",
+      Time_Diff_Minutes > 6 ~ "Over 6 min",
+      Time_Diff_Minutes == 0 ~ "Duplicate",
+      TRUE ~ "Normal (4-6 min)"
+    )
+  )
+```
+#### Plotting those timegaps
+```{r}
+ggplot(time_gaps_plot, aes(x = Timestamp)) +
+  # Normaler Bereich (4–6 Minuten) – als Hintergrund
+  geom_point(
+    data = subset(time_gaps_plot, Gap_Category == "Normal (4-6 min)"),
+    aes(y = Time_Diff_Minutes),
+    color = "gray70", alpha = 0.8, size = 1.5
+  ) +
+  
+  # Gaps > 6 Minuten – rot
+  geom_point(
+    data = subset(time_gaps_plot, Gap_Category == "Over 6 min"),
+    aes(y = Time_Diff_Minutes),
+    color = "red3", alpha = 0.8, size = 1.5
+  ) +
+  
+  # Gaps zwischen 1–3 Minuten – grün
+  geom_point(
+    data = subset(time_gaps_plot, Gap_Category == "Between 1 and 3"),
+    aes(y = Time_Diff_Minutes),
+    color = "green3", alpha = 0.8, size = 1.5
+  ) +
+  
+  labs(
+    title = "Zeitabstände zwischen Glukosemessungen pro ID",
+    subtitle = "Rot = >6min, Grün = 1–3min, Grau = 4–6min",
+    x = "Zeitpunkt",
+    y = "Zeitabstand zur vorherigen Messung (Minuten)"
+  ) +
+  facet_wrap(~ ID, scales = "free_x") +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(face = "bold")
+  )
+```
+### Serial Numbers
+
+**Description**: Check how many serial numbers per ID
+```{r}
+serial_number_summary <- cleaned_data_filtered %>%
+  group_by(ID, Serial.Number) %>%
+  summarise(
+    First_Timestamp = min(Timestamp, na.rm = TRUE),
+    Last_Timestamp = max(Timestamp, na.rm = TRUE),
+    Count = n(),
+    .groups = "drop"
+  ) %>%
+  arrange(ID, First_Timestamp)
+
+serial_number_summary
+```
+### Create Dataset without duplicates
+
+**Description** Step 1: deduplicate: exact duplicates
+```{r}
+cleaned_data_deduplicated <- cleaned_data_filtered %>%
+  distinct(ID, Timestamp, Serial.Number, `Glucose (mg/dl)`, .keep_all = TRUE)
+```
+**Description** Step 2: deduplicate: duplicates with same timestamp and glucose value but not same serial number
+```{r}
+cleaned_data_deduplicated <- cleaned_data_deduplicated %>%
+  distinct(ID, Timestamp, `Glucose (mg/dl)`, .keep_all = TRUE)
+```
+**Description** Step 3: deduplicate: duplicates with same timestamp but different glucose value
+```{r}
+cleaned_data_deduplicated <- anti_join(
+  cleaned_data_deduplicated,
+  conflicting_duplicates,
+  by = c("ID", "Timestamp", "Serial.Number", "Glucose (mg/dl)")
+)
+```
+**Description**: check how many rows were deleted
+```{r}
+nrow(cleaned_data_filtered) - nrow(cleaned_data_deduplicated)
+```
+### Missings in Duplicated Dataset
+**Description:** per ID, check how many data points there are from the first day of measurement on for one year
+
+```{r}
+# 102
+target_id_102 <- "102Ecosleep"               
+start_date_102 <- as.Date("2024-03-11")  
+
+# Filter for this ID and 1-year window
+filtered_data_102 <- cleaned_data_deduplicated %>%
+  filter(
+    ID == target_id_102,
+    Timestamp >= start_date_102,
+    Timestamp < start_date_102 + years(1)
+  )
+
+# Count number of measurements
+measurement_count_102 <- nrow(filtered_data_102)
+
+
+
+# 104
+target_id_104 <- "104Ecosleep"
+start_date_104 <- as.Date("2024-03-18") 
+
+# Filter for this ID and 1-year window
+filtered_data_104 <- cleaned_data_deduplicated %>%
+  filter(
+    ID == target_id_104,
+    Timestamp >= start_date_104,
+    Timestamp < start_date_104 + years(1)
+  )
+
+# Count number of measurements
+measurement_count_104 <- nrow(filtered_data_104)
+
+
+# 107
+target_id_107 <- "107EcoSleep"            
+start_date_107 <- as.Date("2024-03-25") 
+
+# Filter for this ID and 1-year window
+filtered_data_107 <- cleaned_data_deduplicated %>%
+  filter(
+    ID == target_id_107,
+    Timestamp >= start_date_107,
+    Timestamp < start_date_107 + years(1)
+  )
+
+# Count number of measurements
+measurement_count_107 <- nrow(filtered_data_107)
+
+
+# 108
+target_id_108 <- "108EcoSleep"              
+start_date_108 <- as.Date("2024-04-22")  
+
+# Filter for this ID and 1-year window
+filtered_data_108 <- cleaned_data_deduplicated %>%
+  filter(
+    ID == target_id_108,
+    Timestamp >= start_date_108,
+    Timestamp < start_date_108 + years(1)
+  )
+
+# Count number of measurements
+measurement_count_108 <- nrow(filtered_data_108)
+
+
+# 109
+target_id_109 <- "109EcoSleep"            
+start_date_109 <- as.Date("2024-04-22")
+
+# Filter for this ID and 1-year window
+filtered_data_109 <- cleaned_data_deduplicated %>%
+  filter(
+    ID == target_id_109,
+    Timestamp >= start_date_109,
+    Timestamp < start_date_109 + years(1)
+  )
+
+# Count number of measurements
+measurement_count_109 <- nrow(filtered_data_109)
+
+# 112
+target_id_112 <- "112EcoSleep"            
+start_date_112 <- as.Date("2024-08-11")  
+
+# Filter for this ID and 1-year window
+filtered_data_112 <- cleaned_data_deduplicated %>%
+  filter(
+    ID == target_id_112,
+    Timestamp >= start_date_112,
+    Timestamp < start_date_112 + years(1)
+  )
+
+# Count number of measurements
+measurement_count_112 <- nrow(filtered_data_112)
+```
+
+## Time in range
+### General overview on hyper and hypo glucose per ID
+**Description:** hypo < 70 and hyper > 180
+```{r}
+ cleaned_data_deduplicated %>%
+  mutate(
+    Glucose_Category = case_when(
+      `Glucose (mg/dl)` < 70 ~ "Hypo",
+      `Glucose (mg/dl)` > 180 ~ "Hyper",
+      TRUE ~ "Normal"
+    )
+  ) %>%
+  group_by(ID, Glucose_Category) %>%
+  summarise(Count = n(), .groups = "drop") %>%
+  group_by(ID) %>%
+  mutate(Percentage = round(Count / sum(Count) * 100, 1))
+```
+### Hyper and Hypo in Day and Night
+**Description**: Adding Day and Night to Dataset: Night from 22h to 6h
+```{r}
+cleaned_data_deduplicated <- cleaned_data_deduplicated %>%
+  mutate(
+    Hour = hour(Timestamp),
+    Time_of_Day = case_when(
+      Hour >= 6 & Hour < 22 ~ "Day",
+      TRUE ~ "Night"
+    )
+  )
+```
+**Description**: Hyper and Hypo in Day and Night
+
+```{r}
+cleaned_data_deduplicated %>%
+  mutate(
+    Glucose_Category = case_when(
+      `Glucose (mg/dl)` < 70 ~ "Hypo",
+      `Glucose (mg/dl)` > 180 ~ "Hyper",
+      TRUE ~ "Normal"
+    )
+  ) %>%
+  group_by(ID, Time_of_Day, Glucose_Category) %>%
+  summarise(Count = n(), .groups = "drop") %>%
+  group_by(ID, Time_of_Day) %>%
+  mutate(Percentage = round(Count / sum(Count) * 100, 1)) %>%
+  kable()
+```
+**Description**: Hyper and Hypo clinically split 
+```{r}
+
+cleaned_data_deduplicated %>%
+  mutate(
+    Glucose_Category = case_when(
+      `Glucose (mg/dl)` < 54 ~ "Very Low",                           # Severe Hypo
+      `Glucose (mg/dl)` >= 54 & `Glucose (mg/dl)` < 70 ~ "Low",  # Mild Hypo
+      `Glucose (mg/dl)` >= 70 & `Glucose (mg/dl)` <= 180 ~ "Normal", # In Range
+      `Glucose (mg/dl)` > 180 & `Glucose (mg/dl)` <= 250 ~ "High",  # High
+      `Glucose (mg/dl)` > 250 ~ "Very High"                          # Very High
+    )
+  ) %>%
+  group_by(ID, Time_of_Day, Glucose_Category) %>%
+  summarise(Count = n(), .groups = "drop") %>%
+  group_by(ID, Time_of_Day) %>%
+  mutate(Percentage = round(Count / sum(Count) * 100, 1)) %>%
+  kable()
+```
+### Create a Graph
+**Description**: Create color code
+```{r}
+glucose_category_colors <- c(
+  "Very Low" = "#990000",   # dark red
+  "Low" = "#e60000",        # lighter red
+  "Normal" = "#228B22",     # green
+  "High" = "#FFA500",       # orange
+  "Very High" = "#CC5500"   # dark orange
+)
+```
+**Description**: Add glucose category to dataset
+```{r}
+cleaned_data_deduplicated <- cleaned_data_deduplicated %>%
+  mutate(
+    Glucose_Category = case_when(
+      `Glucose (mg/dl)` < 54 ~ "Very Low",
+      `Glucose (mg/dl)` >= 54 & `Glucose (mg/dl)` < 70 ~ "Low",
+      `Glucose (mg/dl)` >= 70 & `Glucose (mg/dl)` <= 180 ~ "Normal",
+      `Glucose (mg/dl)` > 180 & `Glucose (mg/dl)` <= 250 ~ "High",
+      `Glucose (mg/dl)` > 250 ~ "Very High"
+    )
+  )
+```
+**Description**: Create Summary of time in range
+```{r}
+time_in_range_summary <- cleaned_data_deduplicated %>%
+  mutate(
+    Glucose_Category = case_when(
+      `Glucose (mg/dl)` < 54 ~ "Very Low",
+      `Glucose (mg/dl)` >= 54 & `Glucose (mg/dl)` < 70 ~ "Low",
+      `Glucose (mg/dl)` >= 70 & `Glucose (mg/dl)` <= 180 ~ "Normal",
+      `Glucose (mg/dl)` > 180 & `Glucose (mg/dl)` <= 250 ~ "High",
+      `Glucose (mg/dl)` > 250 ~ "Very High"
+    )
+  ) %>%
+  group_by(ID, Time_of_Day, Glucose_Category) %>%
+  summarise(Count = n(), .groups = "drop") %>%
+  group_by(ID, Time_of_Day) %>%
+  mutate(Percentage = round(Count / sum(Count) * 100, 1))
+```
+**Description**: Create Bar
+```{r}
+category_colors <- c(
+  "Very Low" = "#990000",
+  "Low" = "#e60000",
+  "Normal" = "#228B22",
+  "High" = "#FFA500",
+  "Very High" = "#CC5500"
+)
+
+ggplot(time_in_range_summary, aes(x = Time_of_Day, y = Percentage, fill = Glucose_Category)) +
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_manual(values = category_colors) +
+  facet_wrap(~ ID, ncol = 2) +
+  labs(
+    title = "Glucose Ranges by Time of Day",
+    x = "Time of Day",
+    y = "Percentage",
+    fill = "Glucose Category"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "top",
+    strip.text = element_text(face = "bold")
+  )
+```
+**Description**: Create a different Graph
+```{r}
+time_in_range_summary <- time_in_range_summary %>%
+  mutate(Glucose_Category = factor(
+    Glucose_Category,
+    levels = c("Very Low", "Low", "Normal", "High", "Very High")
+  ))
+
+
+ggplot(time_in_range_summary, aes(x = Glucose_Category, y = Percentage, color = Glucose_Category)) +
+  geom_segment(aes(xend = Glucose_Category, y = 0, yend = Percentage), size = 0.8) +
+  geom_point(size = 3) +
+  geom_text(
+    aes(label = paste0(Percentage, "%")),
+    hjust = -0.4,
+    size = 3,
+    color = "black"
+  ) +
+  scale_color_manual(values = category_colors) +
+  facet_grid(ID ~ Time_of_Day) +
+  coord_flip(ylim = c(0, 130)) +  # <- Add more space beyond 100%
+  labs(
+    title = "Glucose Category by ID and Time of Day",
+    x = "Category",
+    y = "Percentage (%)"
+  ) +
+  theme_minimal()
+
+```
+**Description:** Plot a donut chart
+```{r}
+donut_data <- time_in_range_summary %>%
+  filter(ID == "102Ecosleep", Time_of_Day == "Night")
+
+ggplot(donut_data, aes(x = 2, y = Percentage, fill = Glucose_Category)) +
+  geom_bar(stat = "identity", width = 1, color = "white") +
+  coord_polar(theta = "y") +
+  xlim(0.5, 2.5) +  # creates the hole (donut)
+  scale_fill_manual(values = category_colors) +
+  geom_text(aes(label = paste0(Percentage, "%")),
+            position = position_stack(vjust = 0.5), size = 3, color = "black") +
+  theme_void() +
+  labs(title = "Glucose Distribution (Night) – 102Ecosleep",
+       fill = "Glucose Category") +
+  theme(legend.position = "right")
+```
+## Spike analysis
+### Category Change
+**Description**: How often does the glucose value change form one category to another
+```{r}
+# Prepare data
+spike_analysis <- cleaned_data_deduplicated %>%
+  arrange(ID, Timestamp) %>%
+  mutate(
+    Glucose_Category = case_when(
+      `Glucose (mg/dl)` < 54 ~ "Very Low",
+      `Glucose (mg/dl)` >= 54 & `Glucose (mg/dl)` < 70 ~ "Low",
+      `Glucose (mg/dl)` >= 70 & `Glucose (mg/dl)` <= 180 ~ "Normal",
+      `Glucose (mg/dl)` > 180 & `Glucose (mg/dl)` <= 250 ~ "High",
+      `Glucose (mg/dl)` > 250 ~ "Very High"
+    ),
+    Prev_Category = lag(Glucose_Category),
+    Prev_ID = lag(ID),
+    Prev_Time_of_Day = lag(Time_of_Day),
+    Spike = Glucose_Category != Prev_Category & ID == Prev_ID & Time_of_Day == Prev_Time_of_Day
+  ) %>%
+  filter(Spike) %>%
+  mutate(
+    From = Prev_Category,
+    To = Glucose_Category
+  ) %>%
+  mutate(
+    Spike_Direction = paste0(Prev_Category, " → ", Glucose_Category)
+  ) %>%
+  group_by(ID, Time_of_Day, Spike_Direction, From, To) %>%
+  summarise(Spike_Count = n(), .groups = "drop")
+
+
+
+spike_percent <- spike_analysis %>%
+  group_by(ID, Time_of_Day) %>%
+  mutate(
+    Total_Spikes = sum(Spike_Count),
+    Percentage = round(100 * Spike_Count / Total_Spikes, 1)
+  ) %>%
+  ungroup()
+```
+**Description:** Plot the Category Change in Percent
+```{r}
+ggplot(spike_percent, aes(x = Spike_Direction, y = Percentage, fill = Spike_Direction)) +
+  geom_col() +
+  coord_flip() +
+  facet_grid(ID ~ Time_of_Day) +  # Rows = IDs, Columns = Day/Night
+  labs(
+    title = "Transitions Between Glucose Categories (Spikes)",
+    x = "Transition",
+    y = "Percentage (%)"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    strip.text = element_text(face = "bold", size = 10)
+  )
+```
+**Description:** Plot the Category Change in Count
+```{r}
+ggplot(spike_analysis, aes(x = Spike_Direction, y = Spike_Count, fill = Spike_Direction)) +
+  geom_col() +
+  facet_wrap(~ ID) +
+  coord_flip() +
+  labs(
+    title = "Transitions Between Glucose Categories (Spikes)",
+    x = "Transition",
+    y = "Count"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+**Description:** Create a heat map
+```{r}
+category_levels <- c("Very Low", "Low", "Normal", "High", "Very High")
+
+spike_percent <- spike_percent %>%
+  mutate(
+    From = factor(From, levels = category_levels),
+    To = factor(To, levels = category_levels)
+  )
+
+
+ggplot(spike_percent, aes(x = From, y = To, fill = Percentage)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = Percentage), size = 3) +
+  facet_grid(ID ~ Time_of_Day) +
+  scale_fill_gradient(low = "white", high = "steelblue") +
+  labs(
+    title = "Transition Heatmap Between Glucose Categories",
+    x = "Previous Category",
+    y = "Current Category",
+    fill = "Percent (%)"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(face = "bold")
+  )
+```
+**Description**: Creat a heatmap with heatmap() function and for all IDs
+```{r}
+
+
+library(pheatmap)
+
+# Summarise raw counts, not percentages
+overall_data <- spike_analysis %>%
+  separate(Spike_Direction, into = c("From", "To"), sep = " → ") %>%
+  group_by(From, To) %>%
+  summarise(Total_Spike_Count = sum(Spike_Count), .groups = "drop")
+
+# Total transitions for percentage calculation
+total_spikes_all <- sum(overall_data$Total_Spike_Count)
+
+# Compute true overall percentage
+overall_data <- overall_data %>%
+  mutate(
+    Percentage = round(100 * Total_Spike_Count / total_spikes_all, 1),
+    From = factor(From, levels = category_levels),
+    To = factor(To, levels = category_levels)
+  )
+
+# Create matrix for pheatmap
+heatmap_matrix <- matrix(
+  0, 
+  nrow = length(category_levels), 
+  ncol = length(category_levels),
+  dimnames = list(From = category_levels, To = category_levels)
+)
+
+for (i in seq_len(nrow(overall_data))) {
+  row <- overall_data$From[i]
+  col <- overall_data$To[i]
+  val <- overall_data$Percentage[i]
+  heatmap_matrix[row, col] <- val
+}
+
+# Plot with correct percentages: using pheatmap() function to be able to integrate percentages
+pheatmap(
+  heatmap_matrix,
+  display_numbers = TRUE,
+  number_format = "%.1f",  
+  color = colorRampPalette(c("white", "steelblue"))(100),
+  cluster_rows = FALSE,
+  cluster_cols = FALSE,
+  main = "Transition Heatmap (Overall Study Percentage)",
+  angle_col = 45
+)
+```
+### Spike Duration
+```{r}
+spike_durations <- cleaned_data_deduplicated %>%
+  arrange(ID, Timestamp) %>%
+  mutate(
+    Glucose_Category = case_when(
+      `Glucose (mg/dl)` < 54 ~ "Very Low",
+      `Glucose (mg/dl)` >= 54 & `Glucose (mg/dl)` < 70 ~ "Low",
+      `Glucose (mg/dl)` >= 70 & `Glucose (mg/dl)` <= 180 ~ "Normal",
+      `Glucose (mg/dl)` > 180 & `Glucose (mg/dl)` <= 250 ~ "High",
+      `Glucose (mg/dl)` > 250 ~ "Very High"
+    ),
+    Category_Change = Glucose_Category != lag(Glucose_Category) | ID != lag(ID)
+  ) %>%
+  # Group consecutive identical categories per ID
+  mutate(Spike_Group = cumsum(replace_na(Category_Change, TRUE))) %>%
+  group_by(ID, Spike_Group) %>%
+  summarise(
+    Start = min(Timestamp),
+    End = max(Timestamp),
+    Duration_min = as.numeric(difftime(max(Timestamp), min(Timestamp), units = "mins")),
+    Category = first(Glucose_Category),
+    .groups = "drop"
+  ) %>%
+  # Filter for spikes only (exclude normal periods)
+  filter(Category != "Normal")
+
+# View spike durations
+head(spike_durations)
+```
+**Description**: Plot the Spikes over time
+```{r}
+ggplot(spike_durations, aes(x = Start, xend = End, y = ID, yend = ID, color = Category)) +
+  geom_segment(size = 8) +
+  scale_color_manual(values = category_colors) +  # Optional: your color scheme
+  labs(
+    title = "Glucose Spikes Over Time",
+    x = "Time",
+    y = "Participant ID",
+    color = "Glucose Category"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "top",
+    axis.text.y = element_text(face = "bold")
+  )
+```
+
+## Day and Night Analysis
+### Defining Day and Night
+```{r}
+cleaned_data_deduplicated <- cleaned_data_deduplicated %>%
+  mutate(
+    Hour = hour(Timestamp),
+    Time_of_Day = case_when(
+      Hour >= 6 & Hour < 22 ~ "Day",
+      TRUE ~ "Night"
+    )
+  )
+```
+### Plotting Day vs Night
+**Description**: Plot 1
+```{r}
+ggplot(cleaned_data_deduplicated, aes(x = Timestamp, y = `Glucose (mg/dl)`, color = Time_of_Day)) +
+  geom_point(alpha = 0.5) +
+  facet_wrap(~ ID, scales = "free_x") +
+  theme_minimal()
+
+ggplot(cleaned_data_deduplicated, aes(x = Time_of_Day, y = `Glucose (mg/dl)`, fill = Time_of_Day)) +
+  geom_boxplot(alpha = 0.7) +
+  facet_wrap(~ ID) +
+  theme_minimal() +
+  labs(title = "Glukosevalue: Day vs. Night", x = "", y = "Glucose (mg/dl)")
+```
+**Description**: Plot 2
+```{r}
+ggplot(cleaned_data_deduplicated, aes(x = Timestamp, y = `Glucose (mg/dl)`, color = Time_of_Day)) +geom_point(alpha = 0.3, size = 1) +
+  geom_smooth(method = "loess", se = FALSE) +
+  facet_wrap(~ ID, scales = "free_x") +
+  scale_color_manual(values = c("Day" = "orange3", "Night" = "midnightblue")) +
+  labs(
+    title = "Glucose trend over time: Day vs. Night",
+    x = "Time",
+    y = "Glucose (mg/dl)",
+    color = "Time of Day"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "top",
+    strip.text = element_text(face = "bold"),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+```
+### Nighttime Glucose
+**Description:** Prepare Data for Graph
+```{r}
+# Filter for night data
+night_data <- cleaned_data_deduplicated %>%
+  mutate(Hour = hour(Timestamp)) %>%
+  filter(Hour >= 22 | Hour < 7) %>%  # Nighttime: 22 to 6
+  
+  # Create reordered factor for plotting (22 to 6)
+  mutate(Hour_Factor = factor(Hour, levels = c(22, 23, 0, 1, 2, 3, 4, 5, 6)))
+
+# Calculate average glucose per hour per ID
+night_avg <- night_data %>%
+  group_by(ID, Hour_Factor) %>%
+  summarise(
+    Avg_Glucose = mean(`Glucose (mg/dl)`, na.rm = TRUE),
+    .groups = "drop"
+  )
+```
+**Description:** Plot the night
+```{r}
+ggplot(night_avg, aes(x = Hour_Factor, y = Avg_Glucose, group = ID, color = ID)) +
+  geom_line(size = 1) +
+  geom_point(size = 1.5) +
+  labs(
+    title = "Nighttime Glucose Trends per ID",
+    subtitle = "Hours from 22:00 to 06:00",
+    x = "Hour of Night",
+    y = "Average Glucose (mg/dl)",
+    color = "ID"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(face = "bold")
+  )
+```
+**Description:** Boxplot of Average Glucose per Hour
+```{r}
+#boxplot
+ggplot(night_data, aes(x = Hour_Factor, y = `Glucose (mg/dl)`, fill = Hour_Factor)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.6) +
+  facet_wrap(~ ID, ncol = 2) +
+  scale_fill_brewer(palette = "Blues") +
+  labs(
+    title = "Nighttime Glucose Distribution per Hour and ID",
+    subtitle = "Hours from 22:00 to 06:00",
+    x = "Hour of Night",
+    y = "Glucose (mg/dl)",
+    fill = "Hour"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(face = "bold")
+  )
+```
+### Create a double plot
+
+```{r}
+# Extract time-of-day in hours and add ID names without "Ecosleep"
+double_data <- cleaned_data_deduplicated %>%
+  mutate(
+    Date = as.Date(Timestamp),
+    Hour = hour(Timestamp),
+    Minute = minute(Timestamp),
+    Time_of_Day = Hour + Minute / 60,
+    ID_Label = case_when(
+      ID == "102Ecosleep" ~ "102",
+      ID == "104Ecosleep" ~ "104",
+      ID == "107EcoSleep" ~ "107",
+      ID == "108EcoSleep" ~ "108",
+      ID == "109EcoSleep" ~ "109",
+      ID == "112EcoSleep" ~ "112",
+      TRUE ~ as.character(ID)
+    )
+  )
+
+# Duplicate data: original time + shifted by 24h
+double_data_long <- bind_rows(
+  double_data %>% mutate(Double_Hour = Time_of_Day),
+  double_data %>% mutate(Double_Hour = Time_of_Day + 24)
+)
+
+# Round down to full hour and keep the original 0–47 factor for correct time ordering
+double_avg <- double_data_long %>%
+  mutate(Hour_Rounded = floor(Double_Hour)) %>%
+  group_by(ID_Label, Hour_Rounded) %>%
+  summarise(Avg_Glucose = mean(`Glucose (mg/dl)`, na.rm = TRUE), .groups = "drop") %>%
+  mutate(
+    Display_Hour = Hour_Rounded %% 24,
+    Day = ifelse(Hour_Rounded < 24, "Day 1", "Day 2"),
+    Hour_Label = paste0(Day, " – ", sprintf("%02d:00", Display_Hour)),
+    Hour_Factor = factor(Hour_Label, levels = c(
+      paste0("Day 1 – ", sprintf("%02d:00", 0:23)),
+      paste0("Day 2 – ", sprintf("%02d:00", 0:23))
+    ))
+  )
+
+
+# Create the plot
+ggplot(double_avg, aes(x = Hour_Factor, y = Avg_Glucose, group = ID_Label, color = ID_Label)) +
+  geom_line(size = 1) +
+  geom_point(size = 1.5) +
+  labs(
+    title = "Double Plot: 48-Hour Glucose Trends per ID",
+    subtitle = "Same 24h cycle shown twice to visualize rhythm",
+    x = "Hour of Day (Repeated)",
+    y = "Average Glucose (mg/dl)",
+    color = "ID"
+  ) +
+  scale_y_continuous(limits = c(85, 120)) +
+  scale_x_discrete(
+    breaks = levels(double_avg$Hour_Factor)[seq(1, 48, by = 4)]
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 7),
+    strip.text = element_text(face = "bold")
+  )
+```
+## Cosinus fit
+### First fit for every ID
+```{r}
+# Filter data for ID 102
+fit_data_102 <- double_avg %>% filter(ID_Label == "102")
+
+# Fit cosine model (period 24h)
+cos_fit_102 <- nls(
+  Avg_Glucose ~ A * cos(2 * pi / 24 * Hour_Rounded + phi) + C,
+  data = fit_data_102,
+  start = list(A = 10, phi = 0, C = 100)  # rough starting guesses
+)
+
+summary(cos_fit_102)
+
+# Add predicted values
+fit_data_102 <- fit_data_102 %>%
+  mutate(Fitted = predict(cos_fit_102))
+
+# Plot actual vs fitted
+ggplot(fit_data_102, aes(x = Hour_Rounded)) +
+  geom_point(aes(y = Avg_Glucose), color = "blue") +
+  geom_line(aes(y = Fitted), color = "red") +
+  labs(
+    title = "Cosine Fit for ID 102",
+    x = "Hour of Day (0–47)",
+    y = "Average Glucose (mg/dl)"
+  ) +
+  theme_minimal()
+
+
+fit_data_104 <- double_avg %>% filter(ID_Label == "104")
+cos_fit_104 <- nls(
+  Avg_Glucose ~ A * cos(2 * pi / 24 * Hour_Rounded + phi) + C,
+  data = fit_data_104,
+  start = list(A = 10, phi = 0, C = 100)
+)
+fit_data_104 <- fit_data_104 %>%
+  mutate(Fitted = predict(cos_fit_104))
+ggplot(fit_data_104, aes(x = Hour_Rounded)) +
+  geom_point(aes(y = Avg_Glucose), color = "blue") +
+  geom_line(aes(y = Fitted), color = "red") +
+  labs(
+    title = "Cosine Fit for ID 104",
+    x = "Hour of Day (0–47)",
+    y = "Average Glucose (mg/dl)"
+  ) +
+  theme_minimal()
+
+
+fit_data_104 <- double_avg %>% filter(ID_Label == "104")
+cos_fit_104 <- nls(
+  Avg_Glucose ~ A * cos(2 * pi / 24 * Hour_Rounded + phi) + C,
+  data = fit_data_104,
+  start = list(A = 10, phi = 0, C = 100)
+)
+fit_data_104 <- fit_data_104 %>%
+  mutate(Fitted = predict(cos_fit_104))
+ggplot(fit_data_104, aes(x = Hour_Rounded)) +
+  geom_point(aes(y = Avg_Glucose), color = "blue") +
+  geom_line(aes(y = Fitted), color = "red") +
+  labs(
+    title = "Cosine Fit for ID 104",
+    x = "Hour of Day (0–47)",
+    y = "Average Glucose (mg/dl)"
+  ) +
+  theme_minimal()
+
+
+fit_data_107 <- double_avg %>% filter(ID_Label == "107")
+
+cos_fit_107 <- nls(
+  Avg_Glucose ~ A * cos(2 * pi / 24 * Hour_Rounded + phi) + C,
+  data = fit_data_107,
+  start = list(A = 10, phi = 0, C = 100)
+)
+
+fit_data_107 <- fit_data_107 %>%
+  mutate(Fitted = predict(cos_fit_107))
+
+ggplot(fit_data_107, aes(x = Hour_Rounded)) +
+  geom_point(aes(y = Avg_Glucose), color = "blue") +
+  geom_line(aes(y = Fitted), color = "red") +
+  labs(
+    title = "Cosine Fit for ID 107",
+    x = "Hour of Day (0–47)",
+    y = "Average Glucose (mg/dl)"
+  ) +
+  theme_minimal()
+
+
+fit_data_108 <- double_avg %>% filter(ID_Label == "108")
+
+cos_fit_108 <- nls(
+  Avg_Glucose ~ A * cos(2 * pi / 24 * Hour_Rounded + phi) + C,
+  data = fit_data_108,
+  start = list(A = 10, phi = 0, C = 100)
+)
+
+fit_data_108 <- fit_data_108 %>%
+  mutate(Fitted = predict(cos_fit_108))
+
+ggplot(fit_data_108, aes(x = Hour_Rounded)) +
+  geom_point(aes(y = Avg_Glucose), color = "blue") +
+  geom_line(aes(y = Fitted), color = "red") +
+  labs(
+    title = "Cosine Fit for ID 108",
+    x = "Hour of Day (0–47)",
+    y = "Average Glucose (mg/dl)"
+  ) +
+  theme_minimal()
+
+fit_data_109 <- double_avg %>% filter(ID_Label == "109")
+
+cos_fit_109 <- nls(
+  Avg_Glucose ~ A * cos(2 * pi / 24 * Hour_Rounded + phi) + C,
+  data = fit_data_109,
+  start = list(A = 10, phi = 0, C = 100)
+)
+
+fit_data_109 <- fit_data_109 %>%
+  mutate(Fitted = predict(cos_fit_109))
+
+ggplot(fit_data_109, aes(x = Hour_Rounded)) +
+  geom_point(aes(y = Avg_Glucose), color = "blue") +
+  geom_line(aes(y = Fitted), color = "red") +
+  labs(
+    title = "Cosine Fit for ID 109",
+    x = "Hour of Day (0–47)",
+    y = "Average Glucose (mg/dl)"
+  ) +
+  theme_minimal()
+
+
+fit_data_112 <- double_avg %>% filter(ID_Label == "112")
+
+cos_fit_112 <- nls(
+  Avg_Glucose ~ A * cos(2 * pi / 24 * Hour_Rounded + phi) + C,
+  data = fit_data_112,
+  start = list(A = 10, phi = 0, C = 100)
+)
+
+fit_data_112 <- fit_data_112 %>%
+  mutate(Fitted = predict(cos_fit_112))
+
+ggplot(fit_data_112, aes(x = Hour_Rounded)) +
+  geom_point(aes(y = Avg_Glucose), color = "blue") +
+  geom_line(aes(y = Fitted), color = "red") +
+  labs(
+    title = "Cosine Fit for ID 112",
+    x = "Hour of Day (0–47)",
+    y = "Average Glucose (mg/dl)"
+  ) +
+  theme_minimal()
+
+
+
+# Maximum bestimmen
+max_row <- fit_data_102 %>% filter(Fitted == max(Fitted))
+cat("Maximum:\n")
+print(max_row %>% select(Hour_Rounded, Fitted))
+
+# Minimum bestimmen
+min_row <- fit_data_102 %>% filter(Fitted == min(Fitted))
+cat("\nMinimum:\n")
+print(min_row %>% select(Hour_Rounded, Fitted))
+```
+

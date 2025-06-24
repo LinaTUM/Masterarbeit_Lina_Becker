@@ -742,12 +742,734 @@ spike_outliers <- spike_durations %>%
 
 
 
+library(ggrepel)
+
+# Donut-Daten vorbereiten
+donut_data <- time_in_range_summary %>%
+  filter(ID == "102Ecosleep", Time_of_Day == "Night") %>%
+  arrange(desc(Glucose_Category)) %>%
+  mutate(
+    ypos = cumsum(Percentage) - 0.5 * Percentage  # Mitte jedes Segments
+  )
+
+# Donut-Plot mit externen Labels
+ggplot(donut_data, aes(x = 2, y = Percentage, fill = Glucose_Category)) +
+  geom_bar(stat = "identity", width = 1, color = "white") +
+  coord_polar(theta = "y") +
+  xlim(0.5, 2.8) +  # größerer Abstand für äußere Labels
+  scale_fill_manual(values = category_colors) +
+  geom_text_repel(
+    aes(
+      y = ypos,
+      label = paste0(Percentage, "%")
+    ),
+    x = 2.5,
+    direction = "y",
+    nudge_x = 0.5,
+    segment.size = 0.4,
+    size = 3,
+    show.legend = FALSE
+  ) +
+  theme_void() +
+  labs(
+    title = "Glucose Distribution (Night) – 102Ecosleep",
+    fill = "Glucose Category"
+  ) +
+  theme(legend.position = "right")
+
+
+##################
+
+# 1. Donut-Daten vorbereiten
+donut_data <- time_in_range_summary %>%
+  arrange(ID, Time_of_Day, desc(Glucose_Category)) %>%
+  group_by(ID, Time_of_Day) %>%
+  mutate(
+    ypos = cumsum(Percentage) - 0.5 * Percentage
+  ) %>%
+  ungroup()
+
+# 2. Donut-Plot für jede ID & Zeitphase
+ggplot(donut_data, aes(x = 2, y = Percentage, fill = Glucose_Category)) +
+  geom_bar(stat = "identity", width = 1, color = "white") +
+  coord_polar(theta = "y") +
+  xlim(0.5, 2.8) +
+  scale_fill_manual(values = category_colors) +
+  geom_text_repel(
+    aes(
+      y = ypos,
+      label = paste0(Percentage, "%")
+    ),
+    x = 2.5,
+    direction = "y",
+    nudge_x = 0.5,
+    segment.size = 0.4,
+    size = 3,
+    show.legend = FALSE
+  ) +
+  facet_wrap(~ ID + Time_of_Day) +  # <- Jeder Plot pro ID und Tageszeit
+  theme_void() +
+  labs(
+    title = "Glucose Distribution by ID and Time of Day",
+    fill = "Glucose Category"
+  ) +
+  theme(
+    legend.position = "right",
+    strip.text = element_text(face = "bold", size = 10)
+  )
+
+
+ggplot(donut_data, aes(x = 2, y = Percentage, fill = Glucose_Category)) +
+  geom_bar(stat = "identity", width = 1, color = "white") +
+  coord_polar(theta = "y") +
+  xlim(1, 2.5) +
+  scale_fill_manual(values = category_colors) +
+  geom_text_repel(
+    aes(
+      y = ypos,
+      label = paste0(Percentage, "%")
+    ),
+    x = 2.5,
+    direction = "y",
+    nudge_x = 0.5,
+    segment.size = 0.4,
+    size = 3,
+    show.legend = FALSE
+  ) +
+  facet_grid(ID ~ Time_of_Day) +  # <-- Structured layout: ID in rows, day/night in columns
+  theme_void() +
+  labs(
+    title = "Glucose Distribution by ID and Time of Day",
+    fill = "Glucose Category"
+  ) +
+  theme(
+    legend.position = "right",
+    strip.text = element_text(face = "bold", size = 10)
+  )
+
+# Then save the plot
+ggsave("glucose_donut_plot.png", width = 14, height = 4 * n_distinct(donut_data$ID))
+
+
+
+# Filter for daytime only
+donut_data_day <- donut_data %>%
+  filter(Time_of_Day == "Day")
+
+# Create the facet donut plot for Day only
+ggplot(donut_data_day, aes(x = 2, y = Percentage, fill = Glucose_Category)) +
+  geom_bar(stat = "identity", width = 1, color = "white") +
+  coord_polar(theta = "y") +
+  xlim(1, 2.5) +
+  scale_fill_manual(values = category_colors) +
+  geom_text_repel(
+    aes(
+      y = ypos,
+      label = paste0(Percentage, "%")
+    ),
+    x = 2.5,
+    direction = "y",
+    nudge_x = 0.5,
+    segment.size = 0.4,
+    size = 3,
+    show.legend = FALSE
+  ) +
+  facet_wrap(~ ID, ncol = 3) +  # Only ID facets now
+  theme_void() +
+  labs(
+    title = "Glucose Distribution (Day Only)",
+    fill = "Glucose Category"
+  ) +
+  theme(
+    legend.position = "right",
+    strip.text = element_text(face = "bold", size = 10)
+  )
+
+
+############ spike analyis
+spike_analysis <- cleaned_data_deduplicated %>%
+  arrange(ID, Timestamp) %>%
+  mutate(
+    Glucose_Category = case_when(
+      `Glucose (mg/dl)` < 54 ~ "Very Low",
+      `Glucose (mg/dl)` >= 54 & `Glucose (mg/dl)` < 70 ~ "Low",
+      `Glucose (mg/dl)` >= 70 & `Glucose (mg/dl)` <= 180 ~ "Normal",
+      `Glucose (mg/dl)` > 180 & `Glucose (mg/dl)` <= 250 ~ "High",
+      `Glucose (mg/dl)` > 250 ~ "Very High"
+    ),
+    Prev_Category = lag(Glucose_Category),
+    Prev_ID = lag(ID),
+    Prev_Time_of_Day = lag(Time_of_Day),
+    Spike = Glucose_Category != Prev_Category & ID == Prev_ID & Time_of_Day == Prev_Time_of_Day
+  ) %>%
+  filter(Spike) %>%
+  mutate(
+    Spike_Direction = paste0(Prev_Category, " → ", Glucose_Category)
+  ) %>%
+  group_by(ID, Time_of_Day, Spike_Direction) %>%
+  summarise(Spike_Count = n(), .groups = "drop")
+
+
+
+spike_percent <- spike_analysis %>%
+  group_by(ID, Time_of_Day) %>%
+  mutate(
+    Total_Spikes = sum(Spike_Count),
+    Percentage = round(100 * Spike_Count / Total_Spikes, 1)
+  ) %>%
+  ungroup()
+
+ggplot(spike_percent, aes(x = Spike_Direction, y = Percentage, fill = Spike_Direction)) +
+  geom_col() +
+  coord_flip() +
+  facet_grid(ID ~ Time_of_Day) +  # Rows = IDs, Columns = Day/Night
+  labs(
+    title = "Transitions Between Glucose Categories (Spikes)",
+    x = "Transition",
+    y = "Percentage (%)"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    strip.text = element_text(face = "bold", size = 10)
+  )
 
 
 
 
 
 
+
+###############
+# Extract time-of-day in hours
+double_data <- cleaned_data_deduplicated %>%
+  mutate(
+    Date = as.Date(Timestamp),
+    Hour = hour(Timestamp),
+    Minute = minute(Timestamp),
+    Time_of_Day = Hour + Minute / 60
+  )
+
+# Duplicate data: original time + shifted by 24h
+double_data_long <- bind_rows(
+  double_data %>% mutate(Double_Hour = Time_of_Day),
+  double_data %>% mutate(Double_Hour = Time_of_Day + 24)
+)
+
+# Round down to full hour
+double_avg <- double_data_long %>%
+  mutate(Hour_Rounded = floor(Double_Hour)) %>%
+  group_by(ID, Hour_Rounded) %>%
+  summarise(Avg_Glucose = mean(`Glucose (mg/dl)`, na.rm = TRUE), .groups = "drop")
+
+
+
+# Keep the original 0–47 factor for correct time ordering
+double_avg <- double_avg %>%
+  mutate(
+    Display_Hour = Hour_Rounded %% 24,  # 0–23 repeated
+    Day = ifelse(Hour_Rounded < 24, "Day 1", "Day 2"),
+    Hour_Label = paste0(Day, " – ", sprintf("%02d:00", Display_Hour)),
+    Hour_Factor = factor(Hour_Label, levels = c(
+      paste0("Day 1 – ", sprintf("%02d:00", 0:23)),
+      paste0("Day 2 – ", sprintf("%02d:00", 0:23))
+    ))
+  )
+
+ggplot(double_avg, aes(x = Hour_Factor, y = Avg_Glucose, group = ID, color = ID)) +
+  geom_line(size = 1) +
+  geom_point(size = 1.5) +
+  labs(
+    title = "Double Plot: 48-Hour Glucose Trends per ID",
+    subtitle = "Same 24h cycle shown twice to visualize rhythm",
+    x = "Time of Day (Repeated)",
+    y = "Average Glucose (mg/dl)",
+    color = "ID"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 7),
+    strip.text = element_text(face = "bold")
+  )
+
+
+
+
+
+
+# Start mit Time of Day und ID-Label
+double_data <- cleaned_data_deduplicated %>%
+  mutate(
+    Date = as.Date(Timestamp),
+    Hour = hour(Timestamp),
+    Minute = minute(Timestamp),
+    Time_of_Day = Hour + Minute / 60,
+    ID_Label = case_when(
+      ID == "102Ecosleep" ~ "102",
+      ID == "104Ecosleep" ~ "104",
+      ID == "107EcoSleep" ~ "107",
+      ID == "108EcoSleep" ~ "108",
+      ID == "109EcoSleep" ~ "109",
+      ID == "112EcoSleep" ~ "112",
+      TRUE ~ as.character(ID)
+    )
+  )
+
+# Double Plot durch Duplizieren der Zeitreihe
+double_data_long <- bind_rows(
+  double_data %>% mutate(Double_Hour = Time_of_Day),
+  double_data %>% mutate(Double_Hour = Time_of_Day + 24)
+)
+
+# Stunden runden und mitteln
+double_avg_2 <- double_data_long %>%
+  mutate(Hour_Rounded = floor(Double_Hour)) %>%
+  group_by(ID_Label, Hour_Rounded) %>%
+  summarise(Avg_Glucose = mean(`Glucose (mg/dl)`, na.rm = TRUE), .groups = "drop") %>%
+  mutate(
+    Display_Hour = Hour_Rounded %% 24,
+    Day = ifelse(Hour_Rounded < 24, "Day 1", "Day 2"),
+    Hour_Label = paste0(Day, " – ", sprintf("%02d:00", Display_Hour)),
+    Hour_Factor = factor(Hour_Label, levels = c(
+      paste0("Day 1 – ", sprintf("%02d:00", 0:23)),
+      paste0("Day 2 – ", sprintf("%02d:00", 0:23))
+    ))
+  )
+
+# Plot
+ggplot(double_avg_2, aes(x = Hour_Factor, y = Avg_Glucose, group = ID_Label, color = ID_Label)) +
+  geom_line(size = 1) +
+  geom_point(size = 1.5) +
+  labs(
+    title = "Double Plot: 48-Hour Glucose Trends per ID",
+    subtitle = "Same 24h cycle shown twice to visualize rhythm",
+    x = "Hour of Day (Repeated)",
+    y = "Average Glucose (mg/dl)",
+    color = "ID"
+  ) +
+  scale_y_continuous(limits = c(85, 120)) +
+  scale_x_discrete(
+    breaks = levels(double_avg_2$Hour_Factor)[seq(1, 48, by = 4)]
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 7),
+    strip.text = element_text(face = "bold")
+  )
+
+
+
+##########
+unique(cleaned_data_deduplicated$ID)
+
+stringi::stri_escape_unicode(cleaned_data_deduplicated$ID)
+
+
+
+
+class(cleaned_data_deduplicated$ID)
+
+############# spike analysis
+spike_analysis2 <- cleaned_data_deduplicated %>%
+  arrange(ID, Timestamp) %>%
+  mutate(
+    Glucose_Category = case_when(
+      `Glucose (mg/dl)` < 54 ~ "Very Low",
+      `Glucose (mg/dl)` >= 54 & `Glucose (mg/dl)` < 70 ~ "Low",
+      `Glucose (mg/dl)` >= 70 & `Glucose (mg/dl)` <= 180 ~ "Normal",
+      `Glucose (mg/dl)` > 180 & `Glucose (mg/dl)` <= 250 ~ "High",
+      `Glucose (mg/dl)` > 250 ~ "Very High"
+    ),
+    Prev_Category = lag(Glucose_Category),
+    Prev_ID = lag(ID),
+    Prev_Time_of_Day = lag(Time_of_Day),
+    Spike = Glucose_Category != Prev_Category & ID == Prev_ID & Time_of_Day == Prev_Time_of_Day
+  ) %>%
+  filter(Spike) %>%
+  mutate(
+    From = Prev_Category,
+    To = Glucose_Category
+  ) %>%
+  mutate(
+    Spike_Direction = paste0(Prev_Category, " → ", Glucose_Category)
+  ) %>%
+  group_by(ID, Time_of_Day, Spike_Direction, From, To) %>%
+  summarise(Spike_Count = n(), .groups = "drop")
+
+
+
+category_levels <- c("Very Low", "Low", "Normal", "High", "Very High")
+
+spike_percent <- spike_percent %>%
+  mutate(
+    From = factor(From, levels = category_levels),
+    To = factor(To, levels = category_levels)
+  )
+
+
+ggplot(spike_percent, aes(x = From, y = To, fill = Percentage)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = Percentage), size = 3) +
+  facet_grid(ID ~ Time_of_Day) +
+  scale_fill_gradient(low = "white", high = "steelblue") +
+  labs(
+    title = "Transition Heatmap Between Glucose Categories",
+    x = "Previous Category",
+    y = "Current Category",
+    fill = "Percent (%)"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(face = "bold")
+  )
+
+
+
+
+##########cosine model
+library(dplyr)
+library(ggplot2)
+
+# Filter data for ID 102
+fit_data_102 <- double_avg %>% filter(ID_Label == "102")
+
+# Fit cosine model (period 24h)
+cos_fit_102 <- nls(
+  Avg_Glucose ~ A * cos(2 * pi / 24 * Hour_Rounded + phi) + C,
+  data = fit_data,
+  start = list(A = 10, phi = 0, C = 100)  # rough starting guesses
+)
+
+summary(cos_fit_102)
+
+# Add predicted values
+fit_data_102 <- fit_data_102 %>%
+  mutate(Fitted = predict(cos_fit_102))
+
+# Plot actual vs fitted
+ggplot(fit_data_102, aes(x = Hour_Rounded)) +
+  geom_point(aes(y = Avg_Glucose), color = "blue") +
+  geom_line(aes(y = Fitted), color = "red") +
+  labs(
+    title = "Cosine Fit for ID 102",
+    x = "Hour of Day (0–47)",
+    y = "Average Glucose (mg/dl)"
+  ) +
+  theme_minimal()
+
+
+fit_data_104 <- double_avg %>% filter(ID_Label == "104")
+cos_fit_104 <- nls(
+  Avg_Glucose ~ A * cos(2 * pi / 24 * Hour_Rounded + phi) + C,
+  data = fit_data_104,
+  start = list(A = 10, phi = 0, C = 100)
+)
+fit_data_104 <- fit_data_104 %>%
+  mutate(Fitted = predict(cos_fit_104))
+ggplot(fit_data_104, aes(x = Hour_Rounded)) +
+  geom_point(aes(y = Avg_Glucose), color = "blue") +
+  geom_line(aes(y = Fitted), color = "red") +
+  labs(
+    title = "Cosine Fit for ID 104",
+    x = "Hour of Day (0–47)",
+    y = "Average Glucose (mg/dl)"
+  ) +
+  theme_minimal()
+
+
+fit_data_104 <- double_avg %>% filter(ID_Label == "104")
+cos_fit_104 <- nls(
+  Avg_Glucose ~ A * cos(2 * pi / 24 * Hour_Rounded + phi) + C,
+  data = fit_data_104,
+  start = list(A = 10, phi = 0, C = 100)
+)
+fit_data_104 <- fit_data_104 %>%
+  mutate(Fitted = predict(cos_fit_104))
+ggplot(fit_data_104, aes(x = Hour_Rounded)) +
+  geom_point(aes(y = Avg_Glucose), color = "blue") +
+  geom_line(aes(y = Fitted), color = "red") +
+  labs(
+    title = "Cosine Fit for ID 104",
+    x = "Hour of Day (0–47)",
+    y = "Average Glucose (mg/dl)"
+  ) +
+  theme_minimal()
+
+
+fit_data_107 <- double_avg %>% filter(ID_Label == "107")
+
+cos_fit_107 <- nls(
+  Avg_Glucose ~ A * cos(2 * pi / 24 * Hour_Rounded + phi) + C,
+  data = fit_data_107,
+  start = list(A = 10, phi = 0, C = 100)
+)
+
+fit_data_107 <- fit_data_107 %>%
+  mutate(Fitted = predict(cos_fit_107))
+
+ggplot(fit_data_107, aes(x = Hour_Rounded)) +
+  geom_point(aes(y = Avg_Glucose), color = "blue") +
+  geom_line(aes(y = Fitted), color = "red") +
+  labs(
+    title = "Cosine Fit for ID 107",
+    x = "Hour of Day (0–47)",
+    y = "Average Glucose (mg/dl)"
+  ) +
+  theme_minimal()
+
+
+fit_data_108 <- double_avg %>% filter(ID_Label == "108")
+
+cos_fit_108 <- nls(
+  Avg_Glucose ~ A * cos(2 * pi / 24 * Hour_Rounded + phi) + C,
+  data = fit_data_108,
+  start = list(A = 10, phi = 0, C = 100)
+)
+
+fit_data_108 <- fit_data_108 %>%
+  mutate(Fitted = predict(cos_fit_108))
+
+ggplot(fit_data_108, aes(x = Hour_Rounded)) +
+  geom_point(aes(y = Avg_Glucose), color = "blue") +
+  geom_line(aes(y = Fitted), color = "red") +
+  labs(
+    title = "Cosine Fit for ID 108",
+    x = "Hour of Day (0–47)",
+    y = "Average Glucose (mg/dl)"
+  ) +
+  theme_minimal()
+
+fit_data_109 <- double_avg %>% filter(ID_Label == "109")
+
+cos_fit_109 <- nls(
+  Avg_Glucose ~ A * cos(2 * pi / 24 * Hour_Rounded + phi) + C,
+  data = fit_data_109,
+  start = list(A = 10, phi = 0, C = 100)
+)
+
+fit_data_109 <- fit_data_109 %>%
+  mutate(Fitted = predict(cos_fit_109))
+
+ggplot(fit_data_109, aes(x = Hour_Rounded)) +
+  geom_point(aes(y = Avg_Glucose), color = "blue") +
+  geom_line(aes(y = Fitted), color = "red") +
+  labs(
+    title = "Cosine Fit for ID 109",
+    x = "Hour of Day (0–47)",
+    y = "Average Glucose (mg/dl)"
+  ) +
+  theme_minimal()
+
+
+fit_data_112 <- double_avg %>% filter(ID_Label == "112")
+
+cos_fit_112 <- nls(
+  Avg_Glucose ~ A * cos(2 * pi / 24 * Hour_Rounded + phi) + C,
+  data = fit_data_112,
+  start = list(A = 10, phi = 0, C = 100)
+)
+
+fit_data_112 <- fit_data_112 %>%
+  mutate(Fitted = predict(cos_fit_112))
+
+ggplot(fit_data_112, aes(x = Hour_Rounded)) +
+  geom_point(aes(y = Avg_Glucose), color = "blue") +
+  geom_line(aes(y = Fitted), color = "red") +
+  labs(
+    title = "Cosine Fit for ID 112",
+    x = "Hour of Day (0–47)",
+    y = "Average Glucose (mg/dl)"
+  ) +
+  theme_minimal()
+
+
+
+# Maximum bestimmen
+max_row <- fit_data_102 %>% filter(Fitted == max(Fitted))
+cat("Maximum:\n")
+print(max_row %>% select(Hour_Rounded, Fitted))
+
+# Minimum bestimmen
+min_row <- fit_data_102 %>% filter(Fitted == min(Fitted))
+cat("\nMinimum:\n")
+print(min_row %>% select(Hour_Rounded, Fitted))
+
+#######heatmap
+
+# Step 1: Summarize across all IDs and times of day
+heatmap_data <- spike_percent %>%
+  group_by(From, To) %>%
+  summarise(Percentage = sum(Percentage, na.rm = TRUE), .groups = "drop")
+
+# Step 2: Ensure correct order of categories
+category_levels <- c("Very Low", "Low", "Normal", "High", "Very High")
+heatmap_data <- heatmap_data %>%
+  mutate(
+    From = factor(From, levels = category_levels),
+    To = factor(To, levels = category_levels)
+  )
+
+# Step 3: Reshape to matrix
+heatmap_matrix <- tidyr::pivot_wider(
+  heatmap_data,
+  names_from = To,
+  values_from = Percentage,
+  values_fill = 0
+) %>%
+  column_to_rownames("From") %>%
+  as.matrix()
+
+# Step 4: Create the heatmap (base R)
+heatmap(
+  heatmap_matrix,
+  Rowv = NA, Colv = NA,
+  col = colorRampPalette(c("white", "steelblue"))(100),
+  scale = "none",
+  main = "Transition Heatmap: All IDs Combined",
+  xlab = "To Category",
+  ylab = "From Category",
+  margins = c(8, 8)
+)
+
+# Step 1: Summarize across all IDs and times of day
+heatmap_data <- spike_percent %>%
+  group_by(From, To) %>%
+  summarise(Percentage = sum(Percentage, na.rm = TRUE), .groups = "drop")
+
+# Step 2: Ensure correct factor order
+category_levels <- c("Very Low", "Low", "Normal", "High", "Very High")
+
+heatmap_data <- heatmap_data %>%
+  mutate(
+    From = factor(From, levels = category_levels),
+    To = factor(To, levels = category_levels)
+  )
+
+# Step 3: Create an empty matrix with correct row and column order
+heatmap_matrix <- matrix(
+  0, 
+  nrow = length(category_levels), 
+  ncol = length(category_levels),
+  dimnames = list(From = category_levels, To = category_levels)
+)
+
+# Step 4: Fill in the matrix with your summarized percentages
+for (i in seq_len(nrow(heatmap_data))) {
+  row <- heatmap_data$From[i]
+  col <- heatmap_data$To[i]
+  val <- heatmap_data$Percentage[i]
+  heatmap_matrix[row, col] <- val
+}
+
+# Step 5: Plot heatmap with correct axis order
+heatmap(
+  heatmap_matrix,
+  Rowv = NA, Colv = NA,
+  col = colorRampPalette(c("white", "steelblue"))(100),
+  scale = "none",
+  main = "Transition Heatmap: All IDs Combined",
+  xlab = "To Category",
+  ylab = "From Category",
+  margins = c(8, 8)
+)
+
+
+
+# Install if needed
+install.packages("pheatmap")
+
+library(pheatmap)
+
+# Ensure correct factor order
+category_levels <- c("Very Low", "Low", "Normal", "High", "Very High")
+
+# Prepare data summarized across all IDs
+heatmap_data <- spike_percent %>%
+  group_by(From, To) %>%
+  summarise(Percentage = sum(Percentage, na.rm = TRUE), .groups = "drop") %>%
+  mutate(
+    From = factor(From, levels = category_levels),
+    To = factor(To, levels = category_levels)
+  )
+
+# Create matrix
+heatmap_matrix <- matrix(
+  0, 
+  nrow = length(category_levels), 
+  ncol = length(category_levels),
+  dimnames = list(From = category_levels, To = category_levels)
+)
+
+for (i in seq_len(nrow(heatmap_data))) {
+  row <- heatmap_data$From[i]
+  col <- heatmap_data$To[i]
+  val <- heatmap_data$Percentage[i]
+  heatmap_matrix[row, col] <- val
+}
+
+# Plot with percentages inside squares
+pheatmap(
+  heatmap_matrix,
+  display_numbers = TRUE,              # Shows the numbers inside squares
+  number_format = "%.1f",              # Format for percentages
+  color = colorRampPalette(c("white", "steelblue"))(100),
+  cluster_rows = FALSE,
+  cluster_cols = FALSE,
+  main = "Transition Heatmap (All IDs Combined)",
+  angle_col = 45
+)
+
+
+
+
+
+# Summarise raw counts, not percentages
+overall_data <- spike_analysis %>%
+  separate(Spike_Direction, into = c("From", "To"), sep = " → ") %>%
+  group_by(From, To) %>%
+  summarise(Total_Spike_Count = sum(Spike_Count), .groups = "drop")
+
+# Total transitions for percentage calculation
+total_spikes_all <- sum(overall_data$Total_Spike_Count)
+
+# Compute true overall percentage
+overall_data <- overall_data %>%
+  mutate(
+    Percentage = round(100 * Total_Spike_Count / total_spikes_all, 1),
+    From = factor(From, levels = category_levels),
+    To = factor(To, levels = category_levels)
+  )
+
+# Create matrix for pheatmap
+heatmap_matrix <- matrix(
+  0, 
+  nrow = length(category_levels), 
+  ncol = length(category_levels),
+  dimnames = list(From = category_levels, To = category_levels)
+)
+
+for (i in seq_len(nrow(overall_data))) {
+  row <- overall_data$From[i]
+  col <- overall_data$To[i]
+  val <- overall_data$Percentage[i]
+  heatmap_matrix[row, col] <- val
+}
+
+# Plot with correct percentages
+pheatmap(
+  heatmap_matrix,
+  display_numbers = TRUE,
+  number_format = "%.1f",  
+  color = colorRampPalette(c("white", "steelblue"))(100),
+  cluster_rows = FALSE,
+  cluster_cols = FALSE,
+  main = "Transition Heatmap (Overall Study Percentage)",
+  angle_col = 45
+)
+
+
+############## day and night
 # Add a Day/Night classification based on hour
 day_night_data <- cleaned_data_deduplicated %>%
   mutate(
@@ -1239,8 +1961,73 @@ glucose_monthly_summary <- cleaned_data %>%
 glucose_monthly_summary
 
 
+######## cosinor
+install.packages("cosinor")
+library(tidyverse)
+library(lubridate)
+library(cosinor)
+
+# Daten für ID 102 vorbereiten
+data_102 <- double_data %>%
+  filter(ID_Label == "102") %>%
+  mutate(
+    Week = isoweek(Timestamp),
+    Year = year(Timestamp)
+  )
+
+# Cosinor-Fit pro Woche, nur wenn genug Daten vorhanden sind
+fit_results <- data_102 %>%
+  group_by(Year, Week) %>%
+  group_split() %>%
+  map_df(~ {
+    df <- .x
+    if (nrow(df) >= 30) {  # Mindestanzahl an Messungen für Stabilität
+      fit <- cosinor.lm(`Glucose (mg/dl)` ~ time(Time_of_Day), period = 24, data = df)
+      tibble(
+        Year = unique(df$Year),
+        Week = unique(df$Week),
+        Acrophase_radians = coef(fit)["acrophase"],
+        Amplitude = coef(fit)["amplitude"],
+        MESOR = coef(fit)["mesor"],
+        p_value = summary(fit)$parameters["amplitude", "Pr(>|t|)"]
+      )
+    } else {
+      NULL
+    }
+  })
+
+# Acrophase von Radiant in Stunden umrechnen
+fit_results <- fit_results %>%
+  mutate(Acrophase_hours = (Acrophase_radians * 24) / (2 * pi))
+
+# Ergebnisse ansehen
+print(fit_results)
 
 
+week1 <- data_102 %>% filter(Year == 2024, Week == 12) %>% drop_na(`Glucose (mg/dl)`, Time_of_Day)
+
+ggplot(week1, aes(x = Time_of_Day, y = `Glucose (mg/dl)`)) +
+  geom_point() +
+  geom_smooth(method = "lm", formula = y ~ cos(2 * pi / 24 * x) + sin(2 * pi / 24 * x)) +
+  theme_minimal()
+
+head(data_102)
 
 
+# Example: Filter one week's data for ID 102
+week_data <- double_data %>%
+  filter(ID_Label == "102") %>%
+  mutate(
+    Date = as.Date(Timestamp),
+    Week = isoweek(Date),
+    Year = year(Date)
+  ) %>%
+  filter(Year == 2024, Week == 12) %>%
+  drop_na(`Glucose (mg/dl)`, Time_of_Day)
 
+# Add sine and cosine predictors
+week_data <- week_data %>%
+  mutate(
+    Cosine = cos(2 * pi / 24 * Time_of_Day),
+    Sine = sin(2 * pi / 24 * Time_of_Day)
+  )
