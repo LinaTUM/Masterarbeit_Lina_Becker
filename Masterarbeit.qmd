@@ -907,19 +907,21 @@ overall_data <- overall_data %>%
     To = factor(To, levels = category_levels)
   )
 
-# Create matrix for pheatmap
+
+# Create matrix for pheatmap with reversed row order
 heatmap_matrix <- matrix(
   0, 
   nrow = length(category_levels), 
   ncol = length(category_levels),
-  dimnames = list(From = category_levels, To = category_levels)
+  dimnames = list(From = rev(category_levels), To = category_levels)
 )
 
+# Populate matrix
 for (i in seq_len(nrow(overall_data))) {
   row <- overall_data$From[i]
   col <- overall_data$To[i]
   val <- overall_data$Percentage[i]
-  heatmap_matrix[row, col] <- val
+  heatmap_matrix[as.character(row), as.character(col)] <- val
 }
 
 # Plot with correct percentages: using pheatmap() function to be able to integrate percentages
@@ -933,6 +935,7 @@ pheatmap(
   main = "Transition Heatmap (Overall Study Percentage)",
   angle_col = 45
 )
+
 ```
 ### Spike Duration
 ```{r}
@@ -1027,6 +1030,41 @@ ggplot(cleaned_data_deduplicated, aes(x = Timestamp, y = `Glucose (mg/dl)`, colo
     axis.text.x = element_text(angle = 45, hjust = 1)
   )
 ```
+**Description:** Plot 3: Daily mean over time + standard deviation
+```{r}
+# create dataset with mean and standard deviation
+  cleaned_summary <- cleaned_data_deduplicated %>%
+    mutate(
+      Date = as.Date(Timestamp)  # date of day
+    ) %>%
+    group_by(ID, Time_of_Day, Date) %>%
+    summarise(
+      mean_glucose = mean(`Glucose (mg/dl)`, na.rm = TRUE),
+      sd_glucose   = sd(`Glucose (mg/dl)`, na.rm = TRUE),
+      .groups = "drop"
+    )
+  
+  # Create Plot
+  ggplot(cleaned_summary, aes(x = Date, y = mean_glucose, color = Time_of_Day, fill = Time_of_Day)) +
+    geom_line(size = 0.5) +
+    geom_ribbon(aes(ymin = mean_glucose - sd_glucose, ymax = mean_glucose + sd_glucose), alpha = 0.2, color = NA) +
+    facet_wrap(~ ID) +
+    scale_color_manual(values = c("Day" = "orange3", "Night" = "midnightblue")) +
+    scale_fill_manual(values = c("Day" = "orange3", "Night" = "midnightblue")) +
+    labs(
+      title = "Daily Mean Glucose with Standard Deviation (Day vs. Night)",
+      x = "Date",
+      y = "Mean Glucose (mg/dl)",
+      color = "Time of Day",
+      fill = "Time of Day"
+    ) +
+    theme_minimal() +
+    theme(
+      legend.position = "top",
+      strip.text = element_text(face = "bold"),
+      axis.text.x = element_text(angle = 45, hjust = 1)
+    )
+``` 
 ### Nighttime Glucose
 **Description:** Prepare Data for Graph
 ```{r}
@@ -1315,4 +1353,1159 @@ min_row <- fit_data_102 %>% filter(Fitted == min(Fitted))
 cat("\nMinimum:\n")
 print(min_row %>% select(Hour_Rounded, Fitted))
 ```
+### Cosinus fit with cosinor()
+**Description**: load cosinor package
+```{r}
+library(cosinor)
+```
+**Description**: Test functioning of the package with vitamind data set
+```{r}
+data("vitamind")
+ head(vitamind)
 
+ fit <- cosinor.lm(Y ~ time(time) + X + amp.acro(X), data = vitamind, period = 12) 
+summary(fit) 
+
+test_cosinor(fit, "X", param = "amp")
+summary(vitamind$Y)
+summary(predict(fit))
+library(ggplot2)
+ggplot_cosinor.lm(fit, x_str = "X")
+```
+
+**Description**: fit cosinor for Ecosleep 102
+```{r}
+# create dataset for cosinor model for 102Ecosleep
+glucose_fit_102_data <- cleaned_data_deduplicated %>%
+  filter(ID == "102Ecosleep") %>%    # filter for 102
+  mutate(
+    datetime = dmy_hm(DeviceTimestamp),  #  if format TT-MM-JJJJ HH:MM
+    dec.time = hour(datetime) + minute(datetime) / 60  # time as decimal hour during the day
+  )
+
+# cosinor model
+glucose_fit_102 <- cosinor.lm(`Glucose (mg/dl)` ~ time(dec.time), data = glucose_fit_102_data, period = 24) 
+summary(glucose_fit_102) 
+
+# raw values
+summary(glucose_fit_102_data$`Glucose (mg/dl)`)
+
+# adjusted values
+summary(predict(glucose_fit_102))
+
+# plot the fit
+ggplot_cosinor.lm(glucose_fit_102)
+```
+**Description**: fit cosinor for Ecosleep 104
+```{r}
+# create dataset for cosinor model for 102Ecosleep
+glucose_fit_104_data <- cleaned_data_deduplicated %>%
+  filter(ID == "104Ecosleep") %>%    # filter for 104
+  mutate(
+    datetime = dmy_hm(DeviceTimestamp),  #  if format TT-MM-JJJJ HH:MM
+    dec.time = hour(datetime) + minute(datetime) / 60  # time as decimal hour during the day
+  )
+
+# cosinor model
+glucose_fit_104 <- cosinor.lm(`Glucose (mg/dl)` ~ time(dec.time), data = glucose_fit_104_data, period = 24) 
+summary(glucose_fit_102) 
+
+# raw values
+summary(glucose_fit_104_data$`Glucose (mg/dl)`)
+
+# adjusted values
+summary(predict(glucose_fit_104))
+
+# plot the fit
+ggplot_cosinor.lm(glucose_fit_104)
+```
+**Description**: fit cosinor for Ecosleep 107
+```{r}
+# create dataset for cosinor model for 107Ecosleep
+glucose_fit_107_data <- cleaned_data_deduplicated %>%
+  filter(ID == "107EcoSleep") %>%    # filter for 107
+  mutate(
+    datetime = dmy_hm(DeviceTimestamp),  #  if format TT-MM-JJJJ HH:MM
+    dec.time = hour(datetime) + minute(datetime) / 60  # time as decimal hour during the day
+  )
+
+# cosinor model
+glucose_fit_107 <- cosinor.lm(`Glucose (mg/dl)` ~ time(dec.time), data = glucose_fit_107_data, period = 24) 
+summary(glucose_fit_107) 
+
+# raw values
+summary(glucose_fit_107_data$`Glucose (mg/dl)`)
+
+# adjusted values
+summary(predict(glucose_fit_107))
+
+# plot the fit
+ggplot_cosinor.lm(glucose_fit_107)
+```
+**Description**: fit cosinor for Ecosleep 108
+```{r}
+# create dataset for cosinor model for 107Ecosleep
+glucose_fit_108_data <- cleaned_data_deduplicated %>%
+  filter(ID == "108EcoSleep") %>%    # filter for 107
+  mutate(
+    datetime = dmy_hm(DeviceTimestamp),  #  if format TT-MM-JJJJ HH:MM
+    dec.time = hour(datetime) + minute(datetime) / 60  # time as decimal hour during the day
+  )
+
+# cosinor model
+glucose_fit_108 <- cosinor.lm(`Glucose (mg/dl)` ~ time(dec.time), data = glucose_fit_108_data, period = 24) 
+summary(glucose_fit_108) 
+
+# raw values
+summary(glucose_fit_108_data$`Glucose (mg/dl)`)
+
+# adjusted values
+summary(predict(glucose_fit_108))
+
+# plot the fit
+ggplot_cosinor.lm(glucose_fit_108)
+```
+**Description**: fit cosinor for Ecosleep 109
+```{r}
+# create dataset for cosinor model for 107Ecosleep
+glucose_fit_109_data <- cleaned_data_deduplicated %>%
+  filter(ID == "109EcoSleep") %>%    # filter for 109
+  mutate(
+    datetime = dmy_hm(DeviceTimestamp),  #  if format TT-MM-JJJJ HH:MM
+    dec.time = hour(datetime) + minute(datetime) / 60  # time as decimal hour during the day
+  )
+
+# cosinor model
+glucose_fit_109 <- cosinor.lm(`Glucose (mg/dl)` ~ time(dec.time), data = glucose_fit_109_data, period = 24) 
+summary(glucose_fit_109) 
+
+# raw values
+summary(glucose_fit_109_data$`Glucose (mg/dl)`)
+
+# adjusted values
+summary(predict(glucose_fit_109))
+
+# plot the fit
+ggplot_cosinor.lm(glucose_fit_109)
+```
+**Description**: fit cosinor for Ecosleep 112
+```{r}
+# create dataset for cosinor model for 112Ecosleep
+glucose_fit_112_data <- cleaned_data_deduplicated %>%
+  filter(ID == "112EcoSleep") %>%    # filter for 112
+  mutate(
+    datetime = dmy_hm(DeviceTimestamp),  #  if format TT-MM-JJJJ HH:MM
+    dec.time = hour(datetime) + minute(datetime) / 60  # time as decimal hour during the day
+  )
+
+# cosinor model
+glucose_fit_112 <- cosinor.lm(`Glucose (mg/dl)` ~ time(dec.time), data = glucose_fit_112_data, period = 24) 
+summary(glucose_fit_112) 
+
+# raw values
+summary(glucose_fit_112_data$`Glucose (mg/dl)`)
+
+# adjusted values
+summary(predict(glucose_fit_112))
+
+# plot the fit
+ggplot_cosinor.lm(glucose_fit_112)
+```
+### Manual Consinus fit but with datasets prepared for fit with cosinor() function (-> no hourly bins but all datapoints)
+**Description**: Fit for 102
+```{r}
+cos_fit_102_orig <- nls(
+  `Glucose (mg/dl)` ~ A * cos(2 * pi / 24 * dec.time + phi) + C,
+  data = glucose_fit_102_data,
+  start = list(A = 10, phi = 0, C = 100)  # start values
+)
+
+# Ergebnis anzeigen
+summary(cos_fit_102_orig)
+
+# prepare dataset for plotting
+glucose_fit_102_data <- glucose_fit_102_data %>%
+  mutate(Fitted = predict(cos_fit_102_orig))
+
+
+ggplot(glucose_fit_102_data, aes(x = dec.time, y = `Glucose (mg/dl)`)) +
+  geom_point(alpha = 0.3, color = "grey") +  # Original glucose values
+  geom_line(aes(y = Fitted), color = "blue", size = 1) +  # Cosinus fit
+  labs(title = "Manual Cosinus-Fit for 102 with original data",
+       x = "time (decimal hours)",
+       y = "Glucose (mg/dl)") +
+  theme_minimal()
+```
+**Desciption:** Fit for 104
+```{r}
+cos_fit_104_orig <- nls(
+  `Glucose (mg/dl)` ~ A * cos(2 * pi / 24 * dec.time + phi) + C,
+  data = glucose_fit_104_data,
+  start = list(A = 10, phi = 0, C = 100)  # start values
+)
+
+# Ergebnis anzeigen
+summary(cos_fit_104_orig)
+
+# prepare dataset for plotting
+glucose_fit_104_data <- glucose_fit_104_data %>%
+  mutate(Fitted = predict(cos_fit_104_orig))
+
+
+ggplot(glucose_fit_104_data, aes(x = dec.time, y = `Glucose (mg/dl)`)) +
+  geom_point(alpha = 0.3, color = "grey") +  # Original glucose values
+  geom_line(aes(y = Fitted), color = "blue", size = 1) +  # Cosinus fit
+  labs(title = "Manual Cosinus-Fit for 104 with original data",
+       x = "time (decimal hours)",
+       y = "Glucose (mg/dl)") +
+  theme_minimal()
+```
+**Desciption:** Fit for 107
+```{r}
+cos_fit_107_orig <- nls(
+  `Glucose (mg/dl)` ~ A * cos(2 * pi / 24 * dec.time + phi) + C,
+  data = glucose_fit_107_data,
+  start = list(A = 10, phi = 0, C = 100)  # start values
+)
+
+# Ergebnis anzeigen
+summary(cos_fit_107_orig)
+
+# prepare dataset for plotting
+glucose_fit_107_data <- glucose_fit_107_data %>%
+  mutate(Fitted = predict(cos_fit_107_orig))
+
+
+ggplot(glucose_fit_107_data, aes(x = dec.time, y = `Glucose (mg/dl)`)) +
+  geom_point(alpha = 0.3, color = "grey") +  # Original glucose values
+  geom_line(aes(y = Fitted), color = "blue", size = 1) +  # Cosinus fit
+  labs(title = "Manual Cosinus-Fit for 107 with original data",
+       x = "time (decimal hours)",
+       y = "Glucose (mg/dl)") +
+  theme_minimal()
+```
+**Description:** Fit for 108
+```{r}
+cos_fit_108_orig <- nls(
+  `Glucose (mg/dl)` ~ A * cos(2 * pi / 24 * dec.time + phi) + C,
+  data = glucose_fit_108_data,
+  start = list(A = 10, phi = 0, C = 100)  # start values
+)
+
+# Ergebnis anzeigen
+summary(cos_fit_108_orig)
+
+# prepare dataset for plotting
+glucose_fit_108_data <- glucose_fit_108_data %>%
+  mutate(Fitted = predict(cos_fit_108_orig))
+
+
+ggplot(glucose_fit_108_data, aes(x = dec.time, y = `Glucose (mg/dl)`)) +
+  geom_point(alpha = 0.3, color = "grey") +  # Original glucose values
+  geom_line(aes(y = Fitted), color = "blue", size = 1) +  # Cosinus fit
+  labs(title = "Manual Cosinus-Fit for 108 with original data",
+       x = "time (decimal hours)",
+       y = "Glucose (mg/dl)") +
+  theme_minimal()
+```
+**Description:** Fit for 109
+```{r}
+cos_fit_109_orig <- nls(
+  `Glucose (mg/dl)` ~ A * cos(2 * pi / 24 * dec.time + phi) + C,
+  data = glucose_fit_109_data,
+  start = list(A = 10, phi = 0, C = 100)  # start values
+)
+
+# Ergebnis anzeigen
+summary(cos_fit_109_orig)
+
+# prepare dataset for plotting
+glucose_fit_109_data <- glucose_fit_109_data %>%
+  mutate(Fitted = predict(cos_fit_109_orig))
+
+
+ggplot(glucose_fit_109_data, aes(x = dec.time, y = `Glucose (mg/dl)`)) +
+  geom_point(alpha = 0.3, color = "grey") +  # Original glucose values
+  geom_line(aes(y = Fitted), color = "blue", size = 1) +  # Cosinus fit
+  labs(title = "Manual Cosinus-Fit for 109 with original data",
+       x = "time (decimal hours)",
+       y = "Glucose (mg/dl)") +
+  theme_minimal()
+```
+**Description:** Fit for 112
+```{r}
+cos_fit_112_orig <- nls(
+  `Glucose (mg/dl)` ~ A * cos(2 * pi / 24 * dec.time + phi) + C,
+  data = glucose_fit_112_data,
+  start = list(A = 10, phi = 0, C = 100)  # start values
+)
+
+# Ergebnis anzeigen
+summary(cos_fit_112_orig)
+
+# prepare dataset for plotting
+glucose_fit_112_data <- glucose_fit_112_data %>%
+  mutate(Fitted = predict(cos_fit_112_orig))
+
+
+ggplot(glucose_fit_112_data, aes(x = dec.time, y = `Glucose (mg/dl)`)) +
+  geom_point(alpha = 0.3, color = "grey") +  # Original glucose values
+  geom_line(aes(y = Fitted), color = "blue", size = 1) +  # Cosinus fit
+  labs(title = "Manual Cosinus-Fit for 112 with original data",
+       x = "time (decimal hours)",
+       y = "Glucose (mg/dl)") +
+  theme_minimal()
+```
+### Comparison of outputs of the different fits
+```{r}
+summary(cos_fit_102)
+summary(glucose_fit_102)
+summary(cos_fit_102_orig)
+```
+
+```{r}
+summary(cos_fit_104)
+summary(glucose_fit_104)
+summary(cos_fit_104_orig)
+```
+
+```{r}
+summary(cos_fit_107)
+summary(glucose_fit_107)
+summary(cos_fit_107_orig)
+```
+
+```{r}
+summary(cos_fit_108)
+summary(glucose_fit_108)
+summary(cos_fit_108_orig)
+```
+
+```{r}
+summary(cos_fit_109)
+summary(glucose_fit_109)
+summary(cos_fit_109_orig)
+```
+
+```{r}
+summary(cos_fit_112)
+summary(glucose_fit_112)
+summary(cos_fit_112_orig)
+```
+### Moving window
+**Description:** Cos for 102: Moving window for 102
+
+```{r}
+  # Storage for results
+  moving_window_102 <- data.frame(
+    Window_Start = as.POSIXct(character()),
+    Amp = numeric(),
+    Acrophase_Raw_Hours = numeric(),
+    Max_Time_Hours = numeric(),
+    Min_Time_Hours = numeric(),
+    Intercept = numeric(),
+    stringsAsFactors = FALSE
+  )
+  
+  # Time boundaries
+  start_time_mv_102 <- min(glucose_fit_102_data$datetime)
+  end_time_mv_102 <- max(glucose_fit_102_data$datetime)
+  
+  # Window setup
+  window_length <- days(3)
+  step_size <- days(1)
+  current_start_102 <- start_time_mv_102
+  
+  while (current_start_102 + window_length <= end_time_mv_102) {
+    
+    current_end_102 <- current_start_102 + window_length
+    
+    # Filter window
+    window_data_102 <- glucose_fit_102_data %>%
+      filter(datetime >= current_start_102 & datetime < current_end_102)
+    
+    # Skip small windows
+    if (nrow(window_data_102) < 100) {
+      current_start_102 <- current_start_102 + step_size
+      next
+    }
+    
+    # Try fitting model
+    fit_102 <- tryCatch({
+      cosinor.lm(`Glucose (mg/dl)` ~ time(dec.time), data = window_data_102, period = 24)
+    }, error = function(e) NA)
+    
+    # Proceed only if fit succeeded
+    if (inherits(fit_102, "cosinor.lm")) {
+      
+      coefs_102 <- coef(fit_102, transformed = TRUE)
+      
+      # Safe extraction
+      if (is.matrix(coefs_102)) {
+        amp_102 <- coefs_102["amp", "estimate"]
+        acr_102 <- coefs_102["acr", "estimate"]
+        intercept_102 <- coefs_102["(Intercept)", "estimate"]
+      } else if (is.vector(coefs_102)) {
+        amp_102 <- coefs_102["amp"]
+        acr_102 <- coefs_102["acr"]
+        intercept_102 <- coefs_102["(Intercept)"]
+      } else {
+        current_start_102 <- current_start_102 + step_size
+        next
+      }
+      
+      
+   # Raw acrophase in hours
+    acrophase_raw_102 <- (acr_102 * 24) / (2 * pi)
+    
+    # Calculate max time (adjusted by 12h if amplitude is negative)
+    max_time_102 <- ((acrophase_raw_102 + ifelse(amp_102 < 0, 12, 0)) + 24) %% 24
+    min_time_102 <- (max_time_102 + 12) %% 24
+    
+    # Store results
+    moving_window_102 <- rbind(moving_window_102, data.frame(
+      Window_Start = current_start_102,
+      Amp = amp_102,
+      Acrophase_Raw_Hours = (acrophase_raw_102 + 24) %% 24,
+      Max_Time_Hours = max_time_102,
+      Min_Time_Hours = min_time_102,
+      Intercept = intercept_102
+    ))
+  }
+  
+  # Move to next window
+  current_start_102 <- current_start_102 + step_size
+}
+```
+**Description:** Cos for 102: Plot
+```{r}
+ggplot(moving_window_102, aes(x = Window_Start)) +
+  geom_line(aes(y = Max_Time_Hours, color = "Maximum")) +
+  geom_line(aes(y = Min_Time_Hours, color = "Minimum")) +
+  geom_point(aes(y = Max_Time_Hours, color = "Maximum")) +
+  geom_point(aes(y = Min_Time_Hours, color = "Minimum")) +
+  scale_color_manual(values = c("Maximum" = "red", "Minimum" = "blue")) +
+  scale_y_continuous(breaks = seq(0, 24, 2), limits = c(0, 24)) +
+  labs(
+    title = "Diurnal Pattern of Maximum and Minimum (Glucose Cosinor)",
+    x = "Window Start Time",
+    y = "Time of Day (Hours)",
+    color = "Time Point"
+  ) +
+  theme_minimal()
+```
+**Description:** Moving Window Cos for 102: Define maxima and minima: Maxima >12h, Minima <12h + min. 400 datapoints are needed to calculate the cos
+```{r}
+# Empty dataframe to store results
+moving_window_102 <- data.frame(
+  Window_Start = as.POSIXct(character()),
+  Amp = numeric(),
+  Acrophase_Raw_Hours = numeric(),
+  Max_Time_Hours = numeric(),
+  Min_Time_Hours = numeric(),
+  Intercept = numeric(),
+  stringsAsFactors = FALSE
+)
+
+# Define time boundaries
+start_time_mv_102 <- min(glucose_fit_102_data$datetime)
+end_time_mv_102 <- max(glucose_fit_102_data$datetime)
+
+# Window and step sizes
+window_length <- days(3)
+step_size <- days(1)
+current_start_102 <- start_time_mv_102
+
+# Sliding window analysis
+while (current_start_102 + window_length <= end_time_mv_102) {
+  
+  current_end_102 <- current_start_102 + window_length
+  
+  # Filter data within window
+  window_data_102 <- glucose_fit_102_data %>%
+    filter(datetime >= current_start_102 & datetime < current_end_102)
+  
+  # Skip windows with too few data points
+  if (nrow(window_data_102) < 400) {
+    current_start_102 <- current_start_102 + step_size
+    next
+  }
+  
+  # Fit cosinor model
+  fit_102 <- tryCatch({
+    cosinor.lm(`Glucose (mg/dl)` ~ time(dec.time), data = window_data_102, period = 24)
+  }, error = function(e) NA)
+  
+  if (inherits(fit_102, "cosinor.lm")) {
+    
+    coefs_102 <- coef(fit_102, transformed = TRUE)
+    
+    # Extract coefficients
+    if (is.matrix(coefs_102)) {
+      amp_102 <- coefs_102["amp", "estimate"]
+      acr_102 <- coefs_102["acr", "estimate"]
+      intercept_102 <- coefs_102["(Intercept)", "estimate"]
+    } else if (is.vector(coefs_102)) {
+      amp_102 <- coefs_102["amp"]
+      acr_102 <- coefs_102["acr"]
+      intercept_102 <- coefs_102["(Intercept)"]
+    } else {
+      current_start_102 <- current_start_102 + step_size
+      next
+    }
+    
+    # Raw acrophase in hours
+    acrophase_raw_102 <- (acr_102 * 24) / (2 * pi)
+    acrophase_norm_102 <- (acrophase_raw_102 + 24) %% 24
+    
+    # Max and min time depending on amplitude sign
+    if (amp_102 >= 0) {
+      max_time_102 <- acrophase_norm_102
+      min_time_102 <- (acrophase_norm_102 + 12) %% 24
+    } else {
+      min_time_102 <- acrophase_norm_102
+      max_time_102 <- (acrophase_norm_102 + 12) %% 24
+    }
+    
+    # Ensure max > 12 and min < 12 (if desired visual convention)
+    if (max_time_102 < 12) {
+      temp_102 <- max_time_102
+      max_time_102 <- min_time_102
+      min_time_102 <- temp_102
+    }
+    
+    # Store results
+    moving_window_102 <- rbind(moving_window_102, data.frame(
+      Window_Start = current_start_102,
+      Amp = amp_102,
+      Acrophase_Raw_Hours = acrophase_norm_102,
+      Max_Time_Hours = max_time_102,
+      Min_Time_Hours = min_time_102,
+      Intercept = intercept_102
+    ))
+  }
+  
+  # Move to next window
+  current_start_102 <- current_start_102 + step_size
+}
+```
+**Description:** Moving Window Cos for 102: Plot
+```{r}
+ggplot(moving_window_102, aes(x = Window_Start)) +
+  geom_line(aes(y = Max_Time_Hours, color = "Maximum"), size = 0.5) +
+  geom_line(aes(y = Min_Time_Hours, color = "Minimum"), size = 0.5) +
+  geom_point(aes(y = Max_Time_Hours, color = "Maximum"), size = 1) +
+  geom_point(aes(y = Min_Time_Hours, color = "Minimum"), size = 1) +
+  scale_color_manual(
+    name = "Time Point",
+    values = c("Maximum" = "red", "Minimum" = "blue")
+  ) +
+  scale_y_continuous(
+    breaks = seq(0, 24, 2),
+    limits = c(0, 24),
+    expand = c(0, 0)
+  ) +
+  labs(
+    title = "Diurnal Timing of Maximum and Minimum (Glucose Cosinor)",
+    x = "Window Start Time",
+    y = "Time of Day (Hours)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "bottom")
+```
+**Description:** Moving Window Cos for 104
+```{r}
+# Empty dataframe to store results
+moving_window_104 <- data.frame(
+  Window_Start = as.POSIXct(character()),
+  Amp = numeric(),
+  Acrophase_Raw_Hours = numeric(),
+  Max_Time_Hours = numeric(),
+  Min_Time_Hours = numeric(),
+  Intercept = numeric(),
+  stringsAsFactors = FALSE
+)
+
+# Define time boundaries
+start_time_mv_104 <- min(glucose_fit_104_data$datetime)
+end_time_mv_104 <- max(glucose_fit_104_data$datetime)
+
+# Window and step sizes
+window_length <- days(3)
+step_size <- days(1)
+current_start_104 <- start_time_mv_104
+
+# Sliding window analysis
+while (current_start_104 + window_length <= end_time_mv_104) {
+  
+  current_end_104 <- current_start_104 + window_length
+  
+  # Filter data within window
+  window_data_104 <- glucose_fit_104_data %>%
+    filter(datetime >= current_start_104 & datetime < current_end_104)
+  
+  # Skip windows with too few data points
+  if (nrow(window_data_104) < 400) {
+    current_start_104 <- current_start_104 + step_size
+    next
+  }
+  
+  # Fit cosinor model
+  fit_104 <- tryCatch({
+    cosinor.lm(`Glucose (mg/dl)` ~ time(dec.time), data = window_data_104, period = 24)
+  }, error = function(e) NA)
+  
+  if (inherits(fit_104, "cosinor.lm")) {
+    
+    coefs_104 <- coef(fit_104, transformed = TRUE)
+    
+    # Extract coefficients
+    if (is.matrix(coefs_104)) {
+      amp_104 <- coefs_104["amp", "estimate"]
+      acr_104 <- coefs_104["acr", "estimate"]
+      intercept_104 <- coefs_104["(Intercept)", "estimate"]
+    } else if (is.vector(coefs_104)) {
+      amp_104 <- coefs_104["amp"]
+      acr_104 <- coefs_104["acr"]
+      intercept_104 <- coefs_104["(Intercept)"]
+    } else {
+      current_start_104 <- current_start_104 + step_size
+      next
+    }
+    
+    # Raw acrophase in hours
+    acrophase_raw_104 <- (acr_104 * 24) / (2 * pi)
+    acrophase_norm_104 <- (acrophase_raw_104 + 24) %% 24
+    
+    # Max and min time depending on amplitude sign
+    if (amp_104 >= 0) {
+      max_time_104 <- acrophase_norm_104
+      min_time_104 <- (acrophase_norm_104 + 12) %% 24
+    } else {
+      min_time_104 <- acrophase_norm_104
+      max_time_104 <- (acrophase_norm_104 + 12) %% 24
+    }
+    
+    # Ensure max > 12 and min < 12 (if desired visual convention)
+    if (max_time_104 < 12) {
+      temp_104 <- max_time_104
+      max_time_104 <- min_time_104
+      min_time_104 <- temp_104
+    }
+    
+    # Store results
+    moving_window_104 <- rbind(moving_window_104, data.frame(
+      Window_Start = current_start_104,
+      Amp = amp_104,
+      Acrophase_Raw_Hours = acrophase_norm_104,
+      Max_Time_Hours = max_time_104,
+      Min_Time_Hours = min_time_104,
+      Intercept = intercept_104
+    ))
+  }
+  
+  # Move to next window
+  current_start_104 <- current_start_104 + step_size
+}
+```
+**Description:** Moving Window Cos for 104: Plot
+```{r}
+ggplot(moving_window_104, aes(x = Window_Start)) +
+  geom_line(aes(y = Max_Time_Hours, color = "Maximum"), size = 0.5) +
+  geom_line(aes(y = Min_Time_Hours, color = "Minimum"), size = 0.5) +
+  geom_point(aes(y = Max_Time_Hours, color = "Maximum"), size = 1) +
+  geom_point(aes(y = Min_Time_Hours, color = "Minimum"), size = 1) +
+  scale_color_manual(
+    name = "Time Point",
+    values = c("Maximum" = "red", "Minimum" = "blue")
+  ) +
+  scale_y_continuous(
+    breaks = seq(0, 24, 2),
+    limits = c(0, 24),
+    expand = c(0, 0)
+  ) +
+  labs(
+    title = "Diurnal Timing of Maximum and Minimum (Glucose Cosinor)",
+    x = "Window Start Time",
+    y = "Time of Day (Hours)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "bottom")
+```
+**Description:** Moving Window Cos for 107
+```{r}
+# Empty dataframe to store results
+moving_window_107 <- data.frame(
+  Window_Start = as.POSIXct(character()),
+  Amp = numeric(),
+  Acrophase_Raw_Hours = numeric(),
+  Max_Time_Hours = numeric(),
+  Min_Time_Hours = numeric(),
+  Intercept = numeric(),
+  stringsAsFactors = FALSE
+)
+
+# Define time boundaries
+start_time_mv_107 <- min(glucose_fit_107_data$datetime)
+end_time_mv_107 <- max(glucose_fit_107_data$datetime)
+
+# Window and step sizes
+window_length <- days(3)
+step_size <- days(1)
+current_start_107 <- start_time_mv_107
+
+# Sliding window analysis
+while (current_start_107 + window_length <= end_time_mv_107) {
+  
+  current_end_107 <- current_start_107 + window_length
+  
+  # Filter data within window
+  window_data_107 <- glucose_fit_107_data %>%
+    filter(datetime >= current_start_107 & datetime < current_end_107)
+  
+  # Skip windows with too few data points
+  if (nrow(window_data_107) < 400) {
+    current_start_107 <- current_start_107 + step_size
+    next
+  }
+  
+  # Fit cosinor model
+  fit_107 <- tryCatch({
+    cosinor.lm(`Glucose (mg/dl)` ~ time(dec.time), data = window_data_107, period = 24)
+  }, error = function(e) NA)
+  
+  if (inherits(fit_107, "cosinor.lm")) {
+    
+    coefs_107 <- coef(fit_107, transformed = TRUE)
+    
+    # Extract coefficients
+    if (is.matrix(coefs_107)) {
+      amp_107 <- coefs_107["amp", "estimate"]
+      acr_107 <- coefs_107["acr", "estimate"]
+      intercept_107 <- coefs_107["(Intercept)", "estimate"]
+    } else if (is.vector(coefs_107)) {
+      amp_107 <- coefs_107["amp"]
+      acr_107 <- coefs_107["acr"]
+      intercept_107 <- coefs_107["(Intercept)"]
+    } else {
+      current_start_107 <- current_start_107 + step_size
+      next
+    }
+    
+    # Raw acrophase in hours
+    acrophase_raw_107 <- (acr_107 * 24) / (2 * pi)
+    acrophase_norm_107 <- (acrophase_raw_107 + 24) %% 24
+    
+    # Max and min time depending on amplitude sign
+    if (amp_107 >= 0) {
+      max_time_107 <- acrophase_norm_107
+      min_time_107 <- (acrophase_norm_107 + 12) %% 24
+    } else {
+      min_time_107 <- acrophase_norm_107
+      max_time_107 <- (acrophase_norm_107 + 12) %% 24
+    }
+    
+    # Ensure max > 12 and min < 12 (if desired visual convention)
+    if (max_time_107 < 12) {
+      temp_107 <- max_time_107
+      max_time_107 <- min_time_107
+      min_time_107 <- temp_107
+    }
+    
+    # Store results
+    moving_window_107 <- rbind(moving_window_107, data.frame(
+      Window_Start = current_start_107,
+      Amp = amp_107,
+      Acrophase_Raw_Hours = acrophase_norm_107,
+      Max_Time_Hours = max_time_107,
+      Min_Time_Hours = min_time_107,
+      Intercept = intercept_107
+    ))
+  }
+  
+  # Move to next window
+  current_start_107 <- current_start_107 + step_size
+}
+```
+**Description:** Moving Window Cos for 107: Plot
+```{r}
+ggplot(moving_window_107, aes(x = Window_Start)) +
+  geom_line(aes(y = Max_Time_Hours, color = "Maximum"), size = 0.5) +
+  geom_line(aes(y = Min_Time_Hours, color = "Minimum"), size = 0.5) +
+  geom_point(aes(y = Max_Time_Hours, color = "Maximum"), size = 1) +
+  geom_point(aes(y = Min_Time_Hours, color = "Minimum"), size = 1) +
+  scale_color_manual(
+    name = "Time Point",
+    values = c("Maximum" = "red", "Minimum" = "blue")
+  ) +
+  scale_y_continuous(
+    breaks = seq(0, 24, 2),
+    limits = c(0, 24),
+    expand = c(0, 0)
+  ) +
+  labs(
+    title = "Diurnal Timing of Maximum and Minimum (Glucose Cosinor)",
+    x = "Window Start Time",
+    y = "Time of Day (Hours)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "bottom")
+```
+**Description:** Moving Window Cos for 108
+```{r}
+# Empty dataframe to store results
+moving_window_108 <- data.frame(
+  Window_Start = as.POSIXct(character()),
+  Amp = numeric(),
+  Acrophase_Raw_Hours = numeric(),
+  Max_Time_Hours = numeric(),
+  Min_Time_Hours = numeric(),
+  Intercept = numeric(),
+  stringsAsFactors = FALSE
+)
+
+# Define time boundaries
+start_time_mv_108 <- min(glucose_fit_108_data$datetime)
+end_time_mv_108 <- max(glucose_fit_108_data$datetime)
+
+# Window and step sizes
+window_length <- days(3)
+step_size <- days(1)
+current_start_108 <- start_time_mv_108
+
+# Sliding window analysis
+while (current_start_108 + window_length <= end_time_mv_108) {
+  
+  current_end_108 <- current_start_108 + window_length
+  
+  # Filter data within window
+  window_data_108 <- glucose_fit_108_data %>%
+    filter(datetime >= current_start_108 & datetime < current_end_108)
+  
+  # Skip windows with too few data points
+  if (nrow(window_data_108) < 400) {
+    current_start_108 <- current_start_108 + step_size
+    next
+  }
+  
+  # Fit cosinor model
+  fit_108 <- tryCatch({
+    cosinor.lm(`Glucose (mg/dl)` ~ time(dec.time), data = window_data_108, period = 24)
+  }, error = function(e) NA)
+  
+  if (inherits(fit_108, "cosinor.lm")) {
+    
+    coefs_108 <- coef(fit_108, transformed = TRUE)
+    
+    # Extract coefficients
+    if (is.matrix(coefs_108)) {
+      amp_108 <- coefs_108["amp", "estimate"]
+      acr_108 <- coefs_108["acr", "estimate"]
+      intercept_108 <- coefs_108["(Intercept)", "estimate"]
+    } else if (is.vector(coefs_108)) {
+      amp_108 <- coefs_108["amp"]
+      acr_108 <- coefs_108["acr"]
+      intercept_108 <- coefs_108["(Intercept)"]
+    } else {
+      current_start_108 <- current_start_108 + step_size
+      next
+    }
+    
+    # Raw acrophase in hours
+    acrophase_raw_108 <- (acr_108 * 24) / (2 * pi)
+    acrophase_norm_108 <- (acrophase_raw_108 + 24) %% 24
+    
+    # Max and min time depending on amplitude sign
+    if (amp_108 >= 0) {
+      max_time_108 <- acrophase_norm_108
+      min_time_108 <- (acrophase_norm_108 + 12) %% 24
+    } else {
+      min_time_108 <- acrophase_norm_108
+      max_time_108 <- (acrophase_norm_108 + 12) %% 24
+    }
+    
+    # Ensure max > 12 and min < 12 (if desired visual convention)
+    if (max_time_108 < 12) {
+      temp_108 <- max_time_108
+      max_time_108 <- min_time_108
+      min_time_108 <- temp_108
+    }
+    
+    # Store results
+    moving_window_108 <- rbind(moving_window_108, data.frame(
+      Window_Start = current_start_108,
+      Amp = amp_108,
+      Acrophase_Raw_Hours = acrophase_norm_108,
+      Max_Time_Hours = max_time_108,
+      Min_Time_Hours = min_time_108,
+      Intercept = intercept_108
+    ))
+  }
+  
+  # Move to next window
+  current_start_108 <- current_start_108 + step_size
+}
+```
+**Description:** Moving Window Cos for 108: Plot
+```{r}
+ggplot(moving_window_108, aes(x = Window_Start)) +
+  geom_line(aes(y = Max_Time_Hours, color = "Maximum"), size = 0.5) +
+  geom_line(aes(y = Min_Time_Hours, color = "Minimum"), size = 0.5) +
+  geom_point(aes(y = Max_Time_Hours, color = "Maximum"), size = 1) +
+  geom_point(aes(y = Min_Time_Hours, color = "Minimum"), size = 1) +
+  scale_color_manual(
+    name = "Time Point",
+    values = c("Maximum" = "red", "Minimum" = "blue")
+  ) +
+  scale_y_continuous(
+    breaks = seq(0, 24, 2),
+    limits = c(0, 24),
+    expand = c(0, 0)
+  ) +
+  labs(
+    title = "Diurnal Timing of Maximum and Minimum (Glucose Cosinor)",
+    x = "Window Start Time",
+    y = "Time of Day (Hours)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "bottom")
+```
+**Description:** Moving Window Cos for 109
+```{r}
+# Empty dataframe to store results
+moving_window_109 <- data.frame(
+  Window_Start = as.POSIXct(character()),
+  Amp = numeric(),
+  Acrophase_Raw_Hours = numeric(),
+  Max_Time_Hours = numeric(),
+  Min_Time_Hours = numeric(),
+  Intercept = numeric(),
+  stringsAsFactors = FALSE
+)
+
+# Define time boundaries
+start_time_mv_109 <- min(glucose_fit_109_data$datetime)
+end_time_mv_109 <- max(glucose_fit_109_data$datetime)
+
+# Window and step sizes
+window_length <- days(3)
+step_size <- days(1)
+current_start_109 <- start_time_mv_109
+
+# Sliding window analysis
+while (current_start_109 + window_length <= end_time_mv_109) {
+  
+  current_end_109 <- current_start_109 + window_length
+  
+  # Filter data within window
+  window_data_109 <- glucose_fit_109_data %>%
+    filter(datetime >= current_start_109 & datetime < current_end_109)
+  
+  # Skip windows with too few data points
+  if (nrow(window_data_109) < 400) {
+    current_start_109 <- current_start_109 + step_size
+    next
+  }
+  
+  # Fit cosinor model
+  fit_109 <- tryCatch({
+    cosinor.lm(`Glucose (mg/dl)` ~ time(dec.time), data = window_data_109, period = 24)
+  }, error = function(e) NA)
+  
+  if (inherits(fit_109, "cosinor.lm")) {
+    
+    coefs_109 <- coef(fit_109, transformed = TRUE)
+    
+    # Extract coefficients
+    if (is.matrix(coefs_109)) {
+      amp_109 <- coefs_109["amp", "estimate"]
+      acr_109 <- coefs_109["acr", "estimate"]
+      intercept_109 <- coefs_109["(Intercept)", "estimate"]
+    } else if (is.vector(coefs_109)) {
+      amp_109 <- coefs_109["amp"]
+      acr_109 <- coefs_109["acr"]
+      intercept_109 <- coefs_109["(Intercept)"]
+    } else {
+      current_start_109 <- current_start_109 + step_size
+      next
+    }
+    
+    # Raw acrophase in hours
+    acrophase_raw_109 <- (acr_109 * 24) / (2 * pi)
+    acrophase_norm_109 <- (acrophase_raw_109 + 24) %% 24
+    
+    # Max and min time depending on amplitude sign
+    if (amp_109 >= 0) {
+      max_time_109 <- acrophase_norm_109
+      min_time_109 <- (acrophase_norm_109 + 12) %% 24
+    } else {
+      min_time_109 <- acrophase_norm_109
+      max_time_109 <- (acrophase_norm_109 + 12) %% 24
+    }
+    
+    # Ensure max > 12 and min < 12 (if desired visual convention)
+    if (max_time_109 < 12) {
+      temp_109 <- max_time_109
+      max_time_109 <- min_time_109
+      min_time_109 <- temp_109
+    }
+    
+    # Store results
+    moving_window_109 <- rbind(moving_window_109, data.frame(
+      Window_Start = current_start_109,
+      Amp = amp_109,
+      Acrophase_Raw_Hours = acrophase_norm_109,
+      Max_Time_Hours = max_time_109,
+      Min_Time_Hours = min_time_109,
+      Intercept = intercept_109
+    ))
+  }
+  
+  # Move to next window
+  current_start_109 <- current_start_109 + step_size
+}
+```
+**Description:** Moving Window Cos for 109: Plot
+```{r}
+ggplot(moving_window_109, aes(x = Window_Start)) +
+  geom_line(aes(y = Max_Time_Hours, color = "Maximum"), size = 0.5) +
+  geom_line(aes(y = Min_Time_Hours, color = "Minimum"), size = 0.5) +
+  geom_point(aes(y = Max_Time_Hours, color = "Maximum"), size = 1) +
+  geom_point(aes(y = Min_Time_Hours, color = "Minimum"), size = 1) +
+  scale_color_manual(
+    name = "Time Point",
+    values = c("Maximum" = "red", "Minimum" = "blue")
+  ) +
+  scale_y_continuous(
+    breaks = seq(0, 24, 2),
+    limits = c(0, 24),
+    expand = c(0, 0)
+  ) +
+  labs(
+    title = "Diurnal Timing of Maximum and Minimum (Glucose Cosinor)",
+    x = "Window Start Time",
+    y = "Time of Day (Hours)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "bottom")
+```
+**Description:** Moving Window Cos for 112
+```{r}
+# Empty dataframe to store results
+moving_window_112 <- data.frame(
+  Window_Start = as.POSIXct(character()),
+  Amp = numeric(),
+  Acrophase_Raw_Hours = numeric(),
+  Max_Time_Hours = numeric(),
+  Min_Time_Hours = numeric(),
+  Intercept = numeric(),
+  stringsAsFactors = FALSE
+)
+
+# Define time boundaries
+start_time_mv_112 <- min(glucose_fit_112_data$datetime)
+end_time_mv_112 <- max(glucose_fit_112_data$datetime)
+
+# Window and step sizes
+window_length <- days(3)
+step_size <- days(1)
+current_start_112 <- start_time_mv_112
+
+# Sliding window analysis
+while (current_start_112 + window_length <= end_time_mv_112) {
+  
+  current_end_112 <- current_start_112 + window_length
+  
+  # Filter data within window
+  window_data_112 <- glucose_fit_112_data %>%
+    filter(datetime >= current_start_112 & datetime < current_end_112)
+  
+  # Skip windows with too few data points
+  if (nrow(window_data_112) < 400) {
+    current_start_112 <- current_start_112 + step_size
+    next
+  }
+  
+  # Fit cosinor model
+  fit_112 <- tryCatch({
+    cosinor.lm(`Glucose (mg/dl)` ~ time(dec.time), data = window_data_112, period = 24)
+  }, error = function(e) NA)
+  
+  if (inherits(fit_112, "cosinor.lm")) {
+    
+    coefs_112 <- coef(fit_112, transformed = TRUE)
+    
+    # Extract coefficients
+    if (is.matrix(coefs_112)) {
+      amp_112 <- coefs_112["amp", "estimate"]
+      acr_112 <- coefs_112["acr", "estimate"]
+      intercept_112 <- coefs_112["(Intercept)", "estimate"]
+    } else if (is.vector(coefs_112)) {
+      amp_112 <- coefs_112["amp"]
+      acr_112 <- coefs_112["acr"]
+      intercept_112 <- coefs_112["(Intercept)"]
+    } else {
+      current_start_112 <- current_start_112 + step_size
+      next
+    }
+    
+    # Raw acrophase in hours
+    acrophase_raw_112 <- (acr_112 * 24) / (2 * pi)
+    acrophase_norm_112 <- (acrophase_raw_112 + 24) %% 24
+    
+    # Max and min time depending on amplitude sign
+    if (amp_112 >= 0) {
+      max_time_112 <- acrophase_norm_112
+      min_time_112 <- (acrophase_norm_112 + 12) %% 24
+    } else {
+      min_time_112 <- acrophase_norm_112
+      max_time_112 <- (acrophase_norm_112 + 12) %% 24
+    }
+    
+    # Ensure max > 12 and min < 12 (if desired visual convention)
+    if (max_time_112 < 12) {
+      temp_112 <- max_time_112
+      max_time_112 <- min_time_112
+      min_time_112 <- temp_112
+    }
+    
+    # Store results
+    moving_window_112 <- rbind(moving_window_112, data.frame(
+      Window_Start = current_start_112,
+      Amp = amp_112,
+      Acrophase_Raw_Hours = acrophase_norm_112,
+      Max_Time_Hours = max_time_112,
+      Min_Time_Hours = min_time_112,
+      Intercept = intercept_112
+    ))
+  }
+  
+  # Move to next window
+  current_start_112 <- current_start_112 + step_size
+}
+```
+**Description:** Moving Window Cos for 112: Plot
+```{r}
+ggplot(moving_window_112, aes(x = Window_Start)) +
+  geom_line(aes(y = Max_Time_Hours, color = "Maximum"), size = 0.5) +
+  geom_line(aes(y = Min_Time_Hours, color = "Minimum"), size = 0.5) +
+  geom_point(aes(y = Max_Time_Hours, color = "Maximum"), size = 1) +
+  geom_point(aes(y = Min_Time_Hours, color = "Minimum"), size = 1) +
+  scale_color_manual(
+    name = "Time Point",
+    values = c("Maximum" = "red", "Minimum" = "blue")
+  ) +
+  scale_y_continuous(
+    breaks = seq(0, 24, 2),
+    limits = c(0, 24),
+    expand = c(0, 0)
+  ) +
+  labs(
+    title = "Diurnal Timing of Maximum and Minimum (Glucose Cosinor)",
+    x = "Window Start Time",
+    y = "Time of Day (Hours)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "bottom")
+```
+### Polar Plots for Max and Min
