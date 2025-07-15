@@ -657,7 +657,7 @@ cleaned_data_deduplicated %>%
 cleaned_data_deduplicated %>%
   mutate(
     Glucose_Category = case_when(
-      `Glucose (mg/dl)` < 54 ~ "Very Low",                           # Severe Hypo
+      `Glucose (mg/dl)` < 54 ~ "Very Low",                        # Severe Hypo
       `Glucose (mg/dl)` >= 54 & `Glucose (mg/dl)` < 70 ~ "Low",  # Mild Hypo
       `Glucose (mg/dl)` >= 70 & `Glucose (mg/dl)` <= 180 ~ "Normal", # In Range
       `Glucose (mg/dl)` > 180 & `Glucose (mg/dl)` <= 250 ~ "High",  # High
@@ -1046,7 +1046,7 @@ ggplot(cleaned_data_deduplicated, aes(x = Timestamp, y = `Glucose (mg/dl)`, colo
   
   # Create Plot
   ggplot(cleaned_summary, aes(x = Date, y = mean_glucose, color = Time_of_Day, fill = Time_of_Day)) +
-    geom_line(size = 0.5) +
+    geom_smooth(size = 0.5) +
     geom_ribbon(aes(ymin = mean_glucose - sd_glucose, ymax = mean_glucose + sd_glucose), alpha = 0.2, color = NA) +
     facet_wrap(~ ID) +
     scale_color_manual(values = c("Day" = "orange3", "Night" = "midnightblue")) +
@@ -1065,7 +1065,7 @@ ggplot(cleaned_data_deduplicated, aes(x = Timestamp, y = `Glucose (mg/dl)`, colo
       axis.text.x = element_text(angle = 45, hjust = 1)
     )
 ``` 
-### Nighttime Glucose
+### Nighttime Glucose: Hourly Bins
 **Description:** Prepare Data for Graph
 ```{r}
 # Filter for night data
@@ -1091,7 +1091,7 @@ ggplot(night_avg, aes(x = Hour_Factor, y = Avg_Glucose, group = ID, color = ID))
   geom_point(size = 1.5) +
   labs(
     title = "Nighttime Glucose Trends per ID",
-    subtitle = "Hours from 22:00 to 06:00",
+    subtitle = "Hours from 22:00 to 06:00: hourly bins",
     x = "Hour of Night",
     y = "Average Glucose (mg/dl)",
     color = "ID"
@@ -1121,6 +1121,80 @@ ggplot(night_data, aes(x = Hour_Factor, y = `Glucose (mg/dl)`, fill = Hour_Facto
     axis.text.x = element_text(angle = 45, hjust = 1),
     strip.text = element_text(face = "bold")
   )
+```
+### Nighttime Glucose: 5min bins
+```{r}
+# create 5min bins
+night_data <- night_data %>%
+  mutate(Minute5 = floor_date(Timestamp, unit = "5 minutes"),
+         Minute5 = format(Minute5, "%H:%M"))
+
+# calculate mean and standard deviation
+night_avg_5 <- night_data %>%
+  group_by(ID, Minute5) %>%
+  summarise(
+    Avg_Glucose_5 = mean(`Glucose (mg/dl)`, na.rm = TRUE),
+    Sd_Glucose_5 = sd(`Glucose (mg/dl)`, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+
+# create levels for right order
+levels_ordered <- format(seq.POSIXt(
+  from = as.POSIXct("2024-01-01 22:00"),
+  to   = as.POSIXct("2024-01-02 06:00"),
+  by   = "5 min"
+), "%H:%M")
+
+# create reordered factor for plotting
+night_avg_5 <- night_avg_5 %>%
+  mutate(Minute5_Factor = factor(Minute5, levels = levels_ordered))
+
+# cretae labels for x axis
+hour_labels <- format(seq.POSIXt(
+  from = as.POSIXct("2024-01-01 22:00"),
+  to = as.POSIXct("2024-01-02 06:00"),
+  by = "1 hour"
+), "%H:%M")
+
+# create one plot for all
+ggplot(night_avg_5, aes(x = Minute5_Factor, y = Avg_Glucose_5, group = ID, color = ID, fill = ID)) +
+  geom_smooth(size = 0.8) +
+  geom_line(size = 0.5) +
+  geom_ribbon(aes(ymin = Avg_Glucose_5 - Sd_Glucose_5, ymax = Avg_Glucose_5 + Sd_Glucose_5), alpha = 0.1, color = NA)+
+  scale_x_discrete(breaks = hour_labels) +
+  labs(
+    title = "Nighttime Glucose Trends per ID",
+    subtitle = "Hours from 22:00 to 06:00: 5min bins",
+    x = "Hour of Night",
+    y = "Average Glucose (mg/dl)",
+    color = "ID"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(face = "bold")
+  )   
+
+# create on eplot per ID
+ggplot(night_avg_5, aes(x = Minute5_Factor, y = Avg_Glucose_5, group = ID, color = ID, fill = ID)) +
+  geom_smooth(size = 0.7) +
+  geom_line(size = 0.5) +
+  geom_ribbon(aes(ymin = Avg_Glucose_5 - Sd_Glucose_5, ymax = Avg_Glucose_5 + Sd_Glucose_5), alpha = 0.1, color = NA)+
+  scale_x_discrete(breaks = hour_labels) +
+  facet_wrap(~ ID) +
+  labs(
+    title = "Nighttime Glucose Trends per ID",
+    subtitle = "Hours from 22:00 to 06:00: 5min bins",
+    x = "Hour of Night",
+    y = "Average Glucose (mg/dl)",
+    color = "ID"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(face = "bold")
+  ) 
 ```
 ### Create a double plot
 
@@ -2508,4 +2582,92 @@ ggplot(moving_window_112, aes(x = Window_Start)) +
   theme_minimal(base_size = 12) +
   theme(legend.position = "bottom")
 ```
+### Seasonal Cosinus Fir
+**Description:** Define Seasons
+```{r}
+  seasons <- function(date) {
+    m <- as.numeric(format(date, "%m"))
+    if (m %in% c(12, 1, 2)) {
+      return("Winter")
+    } else if (m %in% c(3, 4, 5)) {
+      return("Spring")
+    } else if (m %in% c(6, 7, 8)) {
+      return("Summer")
+    } else {
+      return("Autumn")
+    }
+  }
+```
+**Description:** Add Seasons to Moving Window Data Frames
+```{r}
+moving_window_102 <- moving_window_102 %>%
+  mutate(Season = sapply(Window_Start, seasons))
+
+moving_window_104 <- moving_window_104 %>%
+  mutate(Season = sapply(Window_Start, seasons))
+
+moving_window_107 <- moving_window_107 %>%
+  mutate(Season = sapply(Window_Start, seasons))
+
+moving_window_108 <- moving_window_108 %>%
+  mutate(Season = sapply(Window_Start, seasons))
+
+moving_window_109 <- moving_window_109 %>%
+  mutate(Season = sapply(Window_Start, seasons))
+
+moving_window_112 <- moving_window_112 %>%
+  mutate(Season = sapply(Window_Start, seasons))
+```
+**Description:** Calculate Amplitude Means per Season
+```{r}
+ amplitude_means_102 <- moving_window_102 %>%
+    group_by(Season) %>%
+    summarise(
+      mean_amp = mean(Amp, na.rm = TRUE),
+      sd_amp = sd(Amp, na.rm = TRUE),
+      n = n()
+    )
+
+amplitude_means_104 <- moving_window_104 %>%
+    group_by(Season) %>%
+    summarise(
+      mean_amp = mean(Amp, na.rm = TRUE),
+      sd_amp = sd(Amp, na.rm = TRUE),
+      n = n()
+    )
+
+amplitude_means_107 <- moving_window_107 %>%
+    group_by(Season) %>%
+    summarise(
+      mean_amp = mean(Amp, na.rm = TRUE),
+      sd_amp = sd(Amp, na.rm = TRUE),
+      n = n()
+    )
+
+amplitude_means_108 <- moving_window_108 %>%
+    group_by(Season) %>%
+    summarise(
+      mean_amp = mean(Amp, na.rm = TRUE),
+      sd_amp = sd(Amp, na.rm = TRUE),
+      n = n()
+    )
+
+amplitude_means_109 <- moving_window_109 %>%
+    group_by(Season) %>%
+    summarise(
+      mean_amp = mean(Amp, na.rm = TRUE),
+      sd_amp = sd(Amp, na.rm = TRUE),
+      n = n()
+    )
+
+amplitude_means_112 <- moving_window_112 %>%
+    group_by(Season) %>%
+    summarise(
+      mean_amp = mean(Amp, na.rm = TRUE),
+      sd_amp = sd(Amp, na.rm = TRUE),
+      n = n()
+    )
+``` 
+
+
 ### Polar Plots for Max and Min
