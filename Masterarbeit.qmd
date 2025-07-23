@@ -783,6 +783,45 @@ ggplot(donut_data, aes(x = 2, y = Percentage, fill = Glucose_Category)) +
        fill = "Glucose Category") +
   theme(legend.position = "right")
 ```
+### Stacked Chart
+**Description:** Prepare Dataset
+```{r}
+  stacked_chart <- cleaned_data_deduplicated %>%
+    filter(!is.na(Glucose_Category)) %>%
+    mutate(
+      Time = floor_date(Timestamp, "5 minutes"),
+      TimeOnly = format(Time, "%H:%M:%S"),
+      # POSIXct with reference date
+      TimeOnly_POSIX = as.POSIXct(TimeOnly, format = "%H:%M:%S", tz = "UTC")
+    ) %>%
+    count(ID, TimeOnly_POSIX, Glucose_Category) %>%
+    group_by(ID, TimeOnly_POSIX) %>%
+    mutate(percentage = n / sum(n)) %>%
+    ungroup() %>%
+    complete(ID, TimeOnly_POSIX, Glucose_Category, fill = list(n = 0, percentage = 0)) %>%
+    mutate(
+      Glucose_Category = factor(Glucose_Category, levels = c("High", "Normal", "Low", "Very Low"))
+    )
+```
+**Description:** Plot for One ID
+```{r}
+  ggplot(stacked_chart %>% filter(ID == "102Ecosleep"), 
+         aes(x = TimeOnly_POSIX, y = percentage, fill = Glucose_Category)) +
+    geom_area() +
+    scale_x_datetime(date_labels = "%H:%M") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+**Description:** Plot for all IDs
+```{r}
+  ggplot(stacked_chart, 
+         aes(x = TimeOnly_POSIX, y = percentage, fill = Glucose_Category)) +
+    geom_area() +
+    scale_x_datetime(date_labels = "%H:%M") +
+    facet_wrap(~ ID, ncol = 2) +  
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
 ## Spike analysis
 ### Category Change
 **Description**: How often does the glucose value change form one category to another
@@ -2582,7 +2621,7 @@ ggplot(moving_window_112, aes(x = Window_Start)) +
   theme_minimal(base_size = 12) +
   theme(legend.position = "bottom")
 ```
-### Seasonal Cosinus Fir
+### Seasonal Cosinus Fit
 **Description:** Define Seasons
 ```{r}
   seasons <- function(date) {
@@ -2618,13 +2657,17 @@ moving_window_109 <- moving_window_109 %>%
 moving_window_112 <- moving_window_112 %>%
   mutate(Season = sapply(Window_Start, seasons))
 ```
-**Description:** Calculate Amplitude Means per Season
+**Description:** Calculate Amplitude, Acrophase and Intercept Means per Season
 ```{r}
  amplitude_means_102 <- moving_window_102 %>%
     group_by(Season) %>%
     summarise(
       mean_amp = mean(Amp, na.rm = TRUE),
       sd_amp = sd(Amp, na.rm = TRUE),
+      mean_int = mean(Intercept, na.rm = TRUE),
+      sd_int = sd(Intercept, na.rm = TRUE),
+      mean_acr = mean(Acrophase_Raw_Hours, na.rm = TRUE),
+      sd_acr = sd(Acrophase_Raw_Hours, na.rm = TRUE),
       n = n()
     )
 
@@ -2633,6 +2676,10 @@ amplitude_means_104 <- moving_window_104 %>%
     summarise(
       mean_amp = mean(Amp, na.rm = TRUE),
       sd_amp = sd(Amp, na.rm = TRUE),
+       mean_int = mean(Intercept, na.rm = TRUE),
+      sd_int = sd(Intercept, na.rm = TRUE),
+      mean_acr = mean(Acrophase_Raw_Hours, na.rm = TRUE),
+      sd_acr = sd(Acrophase_Raw_Hours, na.rm = TRUE),
       n = n()
     )
 
@@ -2641,6 +2688,10 @@ amplitude_means_107 <- moving_window_107 %>%
     summarise(
       mean_amp = mean(Amp, na.rm = TRUE),
       sd_amp = sd(Amp, na.rm = TRUE),
+      mean_int = mean(Intercept, na.rm = TRUE),
+      sd_int = sd(Intercept, na.rm = TRUE),
+      mean_acr = mean(Acrophase_Raw_Hours, na.rm = TRUE),
+      sd_acr = sd(Acrophase_Raw_Hours, na.rm = TRUE),
       n = n()
     )
 
@@ -2649,6 +2700,10 @@ amplitude_means_108 <- moving_window_108 %>%
     summarise(
       mean_amp = mean(Amp, na.rm = TRUE),
       sd_amp = sd(Amp, na.rm = TRUE),
+      mean_int = mean(Intercept, na.rm = TRUE),
+      sd_int = sd(Intercept, na.rm = TRUE),
+      mean_acr = mean(Acrophase_Raw_Hours, na.rm = TRUE),
+      sd_acr = sd(Acrophase_Raw_Hours, na.rm = TRUE),
       n = n()
     )
 
@@ -2657,6 +2712,10 @@ amplitude_means_109 <- moving_window_109 %>%
     summarise(
       mean_amp = mean(Amp, na.rm = TRUE),
       sd_amp = sd(Amp, na.rm = TRUE),
+      mean_int = mean(Intercept, na.rm = TRUE),
+      sd_int = sd(Intercept, na.rm = TRUE),
+      mean_acr = mean(Acrophase_Raw_Hours, na.rm = TRUE),
+      sd_acr = sd(Acrophase_Raw_Hours, na.rm = TRUE),
       n = n()
     )
 
@@ -2665,9 +2724,326 @@ amplitude_means_112 <- moving_window_112 %>%
     summarise(
       mean_amp = mean(Amp, na.rm = TRUE),
       sd_amp = sd(Amp, na.rm = TRUE),
+      mean_int = mean(Intercept, na.rm = TRUE),
+      sd_int = sd(Intercept, na.rm = TRUE),
+      mean_acr = mean(Acrophase_Raw_Hours, na.rm = TRUE),
+      sd_acr = sd(Acrophase_Raw_Hours, na.rm = TRUE),
       n = n()
     )
 ``` 
+**Description:** Merge Data Sets
+```{r}
+  # Add identifier columns and bind all together
+  means_cos_fit <- bind_rows(
+    amplitude_means_102 %>% mutate(ID = "102"),
+    amplitude_means_104 %>% mutate(ID = "104"),
+    amplitude_means_107 %>% mutate(ID = "107"),
+    amplitude_means_108 %>% mutate(ID = "108"),
+    amplitude_means_109 %>% mutate(ID = "109"),
+    amplitude_means_112 %>% mutate(ID = "112")
+  )
+```
+#### Acrophase: Linear Mixed Effects Model
+**Description:** Install and Load Packages 
+```{r}
+  library(lme4)
+  library(lmerTest)
+```
+**Description:** Apply Linear Mixed Effects Model
+```{r}
+  # Model: Mean amplitude by Season with random intercept for ID
+  model_acr <- lmer(mean_acr ~ Season + (1 | ID), data = means_cos_fit)
+  
+  # Summary with fixed effect estimates and significance
+  summary(model_acr)
+```  
+**Description:** Plot
+```{r}
+  ggplot(means_cos_fit, aes(x = Season, y = mean_acr)) +
+    geom_boxplot(fill = "lightblue", alpha = 0.6) +
+    geom_jitter(width = 0.2, alpha = 0.5, color = "black") +
+    theme_minimal() +
+    labs(title = "Mean Acrophase by Season",
+         x = "Season",
+         y = "Mean Acrophase") +
+    theme(plot.title = element_text(hjust = 0.5))
+```
+#### Amplitude: Linear Mixed Effects Model
+**Description:** Apply Linear Mixed Effects Model
+```{r}
+  # Model: Mean amplitude by Season with random intercept for ID
+  model_amp <- lmer(mean_amp ~ Season + (1 | ID), data = means_cos_fit)
+  
+  # Summary with fixed effect estimates and significance
+  summary(model_amp)
+```  
+**Description:** Plot
+```{r}
+  ggplot(means_cos_fit, aes(x = Season, y = mean_amp)) +
+    geom_boxplot(fill = "lightblue", alpha = 0.6) +
+    geom_jitter(width = 0.2, alpha = 0.5, color = "black") +
+    theme_minimal() +
+    labs(title = "Mean Amplitude by Season",
+         x = "Season",
+         y = "Mean Amplitude") +
+    theme(plot.title = element_text(hjust = 0.5))
+```  
+#### Intercept: Linear Mixed Effects Model
+**Description:** Apply Linear Mixed Effects Model
+```{r}
+  # Model: Mean amplitude by Season with random intercept for ID
+  model_int <- lmer(mean_int ~ Season + (1 | ID), data = means_cos_fit)
+  
+  # Summary with fixed effect estimates and significance
+  summary(model_int)
+```  
+**Description:** Plot
+```{r}
+  ggplot(means_cos_fit, aes(x = Season, y = mean_int)) +
+    geom_boxplot(fill = "lightblue", alpha = 0.6) +
+    geom_jitter(width = 0.2, alpha = 0.5, color = "black") +
+    theme_minimal() +
+    labs(title = "Mean Intercept by Season",
+         x = "Season",
+         y = "Mean Intercept") +
+    theme(plot.title = element_text(hjust = 0.5))
+```
+### Polar Plots 
+#### Polar Plot for Max and Min for ID 102
+**Description:** Code for Polar Plot (ID 102)
+```{r}
+ # 1. Umrechnung der Zeiten in Radianten (0 bis 2pi)
+  moving_window_102 <- moving_window_102 %>%
+    mutate(
+      Min_Rad = (Min_Time_Hours / 24) * 2 * pi,
+      Max_Rad = (Max_Time_Hours / 24) * 2 * pi
+    )
+  
+  # 2. Durchschnittliche Min und Max (Mittelwerte)
+  avg_min_rad <- mean(moving_window_102$Min_Rad)
+  avg_max_rad <- mean(moving_window_102$Max_Rad)
+  
+  # 3. Schwankungsbereich (z.B. +/- 1 Standardabweichung)
+  min_lower <- avg_min_rad - sd(moving_window_102$Min_Rad)
+  min_upper <- avg_min_rad + sd(moving_window_102$Min_Rad)
+  
+  max_lower <- avg_max_rad - sd(moving_window_102$Max_Rad)
+  max_upper <- avg_max_rad + sd(moving_window_102$Max_Rad)
+  
+ 
+  
+  # 5. Pointer (Zeiger) mit Radius 0 bis 1 am Mittelwert-Winkel
+  pointers <- data.frame(
+    angle = c(avg_min_rad, avg_max_rad),
+    label = c("Avg Min", "Avg Max"),
+    color = c("blue", "red")
+  )
+```
+**Description:** Standard Deviation
+```{r}
+ # Rechteck um Avg Max (±1 SD im Winkel, Radius von 0.95 bis 1)
+  max_rect <- data.frame(
+    xmin = max_lower,
+    xmax = max_upper,
+    ymin = 0.95,
+    ymax = 1
+  )
+``` 
+**Description:** Create Polar Plot for 102
+```{r}
+  ggplot() +
+    # Rechteck als Unsicherheitsbereich um Max
+    geom_rect(data = max_rect,
+              aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
+              fill = "pink", alpha = 0.3) +
+    
+    # Zeiger
+    geom_segment(data = pointers,
+                 aes(x = angle, xend = angle, y = 0, yend = 1, color = label),
+                 linewidth = 1.5) +
+    
+    coord_polar(start = 0) +  # 0 Uhr oben
+    scale_x_continuous(
+      breaks = seq(0, 2*pi, length.out = 25),
+      labels = 0:24,
+      limits = c(0, 2*pi)
+    ) +
+    scale_y_continuous(limits = c(0, 1)) +
+    scale_color_manual(values = c("Avg Min" = "blue", "Avg Max" = "pink")) +
+    labs(title = "Polarplot mit Standardabweichungs-Bereich um Max-Zeit") +
+    theme_minimal() +
+    theme(
+      axis.title.y = element_blank(),
+      panel.grid.major = element_line(color = "grey80"),
+      panel.grid.minor = element_blank(),
+      legend.position = "bottom"
+    )
+```
+#### Polar Plot for Max for all IDs
+**Description:** Bind Data Sets
+```{r}
+  # IDs und zugehörige DataFrames
+  id_list <- c(102, 104, 107, 108, 109, 112)
+  
+  # Liste der DataFrames in gleicher Reihenfolge (z. B. vorher erstellt)
+  moving_window_list <- list(
+    moving_window_102,
+    moving_window_104,
+    moving_window_107,
+    moving_window_108,
+    moving_window_109,
+    moving_window_112
+  )
+  
+  # Füge die ID zu jedem DataFrame hinzu
+  moving_window_data <- Map(function(df, id) {
+    df$ID <- id
+    return(df)
+  }, moving_window_list, id_list)
+  
+  # Binde alles zusammen
+  moving_window_data <- bind_rows(moving_window_data)
+```
+
+```{r}
+# Rad-Winkel berechnen
+  moving_window_data <- moving_window_data %>%
+    mutate(Max_Rad = (Max_Time_Hours / 24) * 2 * pi)
+  
+  # Initialize Data Frames for Pointer and SD-Rectangles
+  all_pointers <- data.frame()
+  all_rects <- data.frame()
+  
+  # Loop for all IDs
+  for (id in id_list) {
+    df_id <- moving_window_data %>% filter(ID == id)
+    
+    avg_max <- mean(df_id$Max_Rad, na.rm = TRUE)
+    sd_max <- sd(df_id$Max_Rad, na.rm = TRUE)
+    
+    rect_ymin <- 1 - 0.05 * (which(id_list == id))  
+    rect_ymax <- rect_ymin + 0.05
+    
+    all_pointers <- bind_rows(all_pointers, data.frame(
+      angle = avg_max,
+      label = paste0("Avg Max ", id)
+    ))
+    
+    all_rects <- bind_rows(all_rects, data.frame(
+      xmin = avg_max - sd_max,
+      xmax = avg_max + sd_max,
+      ymin = rect_ymin,
+      ymax = rect_ymax,
+      label = paste0("Avg Max ", id)
+    ))
+  }
+  
+ # Add IDs to data frames 
+  library(stringr)
+  
+  all_pointers <- all_pointers %>%
+    mutate(ID = str_extract(label, "\\d+"))
+  
+  all_rects <- all_rects %>%
+    mutate(ID = str_extract(label, "\\d+"))
+  
+  
+  # Plot
+  ggplot() +
+    geom_rect(data = all_rects,
+              aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = ID),
+              alpha = 0.3) +
+    geom_segment(data = all_pointers,
+                 aes(x = angle, xend = angle, y = 0, yend = 1, color = ID),
+                 linewidth = 1.2) +
+    coord_polar(start = 0) +
+    scale_x_continuous(
+      breaks = seq(0, 2*pi, length.out = 25),
+      labels = 0:24,
+      limits = c(0, 2*pi)
+    ) +
+    scale_y_continuous(limits = c(0, 1)) +
+    labs(
+      title = "Acrophase Maxima + SD for all IDs",
+      x = "Time of Day",
+      y = NULL,
+      color = "Pointer",
+      fill = "Standard Deviation"
+    ) +
+    theme_minimal() +
+    theme(
+      axis.title.y = element_blank(),
+      panel.grid.major = element_line(color = "grey80"),
+      panel.grid.minor = element_blank(),
+      legend.position = "bottom"
+    )
+```
+#### Polar Plot of all IDs with Seasons
+```{r}
+library(dplyr)
+library(ggplot2)
+
+# --- Feste Reihenfolge der IDs für Farben & vertikale Platzierung ---
+id_list <- sort(unique(moving_window_data$ID))
+
+# --- Zusammenfassung: Durchschnitt & SD des Maxima pro Season & ID ---
+season_summary <- moving_window_data %>%
+  group_by(ID, Season) %>%
+  summarise(
+    avg_max_rad = mean((Max_Time_Hours / 24) * 2 * pi, na.rm = TRUE),
+    sd_max_rad = sd((Max_Time_Hours / 24) * 2 * pi, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    angle = avg_max_rad,
+    xmin = avg_max_rad - sd_max_rad,
+    xmax = avg_max_rad + sd_max_rad,
+    ID = factor(ID, levels = id_list),
+    # dynamische vertikale Positionen, um Überlappung zu vermeiden
+    rect_ymin = 1 - 0.04 * (as.numeric(ID) - 1),
+    rect_ymax = rect_ymin + 0.04
+  )
+
+# --- Zeiger-Daten extrahieren ---
+pointers_seasons <- season_summary %>%
+  select(ID, Season, angle)
+
+# --- Rechteck-Daten extrahieren ---
+rects_seasons <- season_summary %>%
+  select(ID, Season, xmin, xmax, rect_ymin, rect_ymax)
+
+# --- Plot erstellen ---
+ggplot() +
+  geom_rect(data = rects_seasons,
+            aes(xmin = xmin, xmax = xmax, ymin = rect_ymin, ymax = rect_ymax, fill = ID),
+            alpha = 0.3, color = NA) +
+  geom_segment(data = pointers_seasons,
+               aes(x = angle, xend = angle, y = 0, yend = 1, color = ID),
+               linewidth = 1.2) +
+  coord_polar(start = 0) +
+  scale_x_continuous(
+    breaks = seq(0, 2 * pi, length.out = 25),
+    labels = 0:24,
+    limits = c(0, 2 * pi)
+  ) +
+  scale_y_continuous(limits = c(0, 1)) +
+  labs(
+    title = "Acrophase Maxima + SD per Season",
+    x = "Time of Day",
+    y = NULL,
+    color = "ID",
+    fill = "ID"
+  ) +
+  facet_wrap(~Season) +
+  theme_minimal() +
+  theme(
+    axis.title.y = element_blank(),
+    panel.grid.major = element_line(color = "grey80"),
+    panel.grid.minor = element_blank(),
+    legend.position = "bottom"
+  )
+```
 
 
-### Polar Plots for Max and Min
+```
+
