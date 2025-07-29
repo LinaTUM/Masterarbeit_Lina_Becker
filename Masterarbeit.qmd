@@ -31,6 +31,7 @@ library(lubridate)
 library(ggplot2)
 library(tidyr)
 library(knitr)
+library(stringr)
 ```
 ## Data Reading
 **Description:** Define directory and combine single data files into one dataset
@@ -122,6 +123,11 @@ combined_data <- combined_data %>%
 # View the first few rows to verify
 head(combined_data)
 ```
+**Description:** Remove "Ecosleep" from ID names
+```{r}
+combined_data <- combined_data %>%
+  mutate(ID = str_remove(ID, regex("Ecosleep$", ignore_case = TRUE )))
+```
 
 **Description:** Get an overview of distribution of historic and scanned glucose data
 ```{r}
@@ -196,22 +202,22 @@ cleaned_data_filtered <- cleaned_data %>%
 ```
 **Description**: Table with overview
 ```{r}
-# Schritt 1: Füge Monat und Jahr-Spalte hinzu
+# Add Month and Year
 glucose_monthly_summary <- cleaned_data %>%
   mutate(
     Month = floor_date(Timestamp, "month")
   ) %>%
   group_by(ID, Month) %>%
   summarise(
-    Measured_Values = n(),  # Tatsächlich gemessene Werte
-    Days_Observed = n_distinct(as.Date(Timestamp)),  # Anzahl untersuchter Tage im Monat
-    Expected_Values = Days_Observed * 288,  # Erwartet: 288 Werte pro Tag
+    Measured_Values = n(),  # Measured Values
+    Days_Observed = n_distinct(as.Date(Timestamp)),  # Observed Days per Month
+    Expected_Values = Days_Observed * 288,  # Expected: 288 per Day
     Missing_Values = Expected_Values - Measured_Values,
     Missing_Percentage = round((Missing_Values / Expected_Values) * 100, 2),
     .groups = "drop"
   )
 
-# Ausgabe anzeigen
+# Show Data Set
 glucose_monthly_summary
 ```
 
@@ -510,7 +516,7 @@ nrow(cleaned_data_filtered) - nrow(cleaned_data_deduplicated)
 
 ```{r}
 # 102
-target_id_102 <- "102Ecosleep"               
+target_id_102 <- "102"               
 start_date_102 <- as.Date("2024-03-11")  
 
 # Filter for this ID and 1-year window
@@ -527,7 +533,7 @@ measurement_count_102 <- nrow(filtered_data_102)
 
 
 # 104
-target_id_104 <- "104Ecosleep"
+target_id_104 <- "104"
 start_date_104 <- as.Date("2024-03-18") 
 
 # Filter for this ID and 1-year window
@@ -543,7 +549,7 @@ measurement_count_104 <- nrow(filtered_data_104)
 
 
 # 107
-target_id_107 <- "107EcoSleep"            
+target_id_107 <- "107"            
 start_date_107 <- as.Date("2024-03-25") 
 
 # Filter for this ID and 1-year window
@@ -559,7 +565,7 @@ measurement_count_107 <- nrow(filtered_data_107)
 
 
 # 108
-target_id_108 <- "108EcoSleep"              
+target_id_108 <- "108"              
 start_date_108 <- as.Date("2024-04-22")  
 
 # Filter for this ID and 1-year window
@@ -575,7 +581,7 @@ measurement_count_108 <- nrow(filtered_data_108)
 
 
 # 109
-target_id_109 <- "109EcoSleep"            
+target_id_109 <- "109"            
 start_date_109 <- as.Date("2024-04-22")
 
 # Filter for this ID and 1-year window
@@ -590,7 +596,7 @@ filtered_data_109 <- cleaned_data_deduplicated %>%
 measurement_count_109 <- nrow(filtered_data_109)
 
 # 112
-target_id_112 <- "112EcoSleep"            
+target_id_112 <- "112"            
 start_date_112 <- as.Date("2024-08-11")  
 
 # Filter for this ID and 1-year window
@@ -769,7 +775,7 @@ ggplot(time_in_range_summary, aes(x = Glucose_Category, y = Percentage, color = 
 **Description:** Plot a donut chart
 ```{r}
 donut_data <- time_in_range_summary %>%
-  filter(ID == "102Ecosleep", Time_of_Day == "Night")
+  filter(ID == "102", Time_of_Day == "Night")
 
 ggplot(donut_data, aes(x = 2, y = Percentage, fill = Glucose_Category)) +
   geom_bar(stat = "identity", width = 1, color = "white") +
@@ -779,7 +785,7 @@ ggplot(donut_data, aes(x = 2, y = Percentage, fill = Glucose_Category)) +
   geom_text(aes(label = paste0(Percentage, "%")),
             position = position_stack(vjust = 0.5), size = 3, color = "black") +
   theme_void() +
-  labs(title = "Glucose Distribution (Night) – 102Ecosleep",
+  labs(title = "Glucose Distribution (Night) – 102",
        fill = "Glucose Category") +
   theme(legend.position = "right")
 ```
@@ -805,7 +811,7 @@ ggplot(donut_data, aes(x = 2, y = Percentage, fill = Glucose_Category)) +
 ```
 **Description:** Plot for One ID
 ```{r}
-  ggplot(stacked_chart %>% filter(ID == "102Ecosleep"), 
+  ggplot(stacked_chart %>% filter(ID == "102"), 
          aes(x = TimeOnly_POSIX, y = percentage, fill = Glucose_Category)) +
     geom_area() +
     scale_x_datetime(date_labels = "%H:%M") +
@@ -822,9 +828,51 @@ ggplot(donut_data, aes(x = 2, y = Percentage, fill = Glucose_Category)) +
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
+### Improved visualization of High, Low and Very Low 
+**Description:** Facet per Category and ID
+```{r}
+ ggplot(stacked_chart, 
+         aes(x = TimeOnly_POSIX, y = percentage)) +
+    geom_area(fill = "steelblue") +
+    facet_grid(Glucose_Category ~ ID) +  # Facet per Category & ID
+    scale_x_datetime(date_labels = "%H:%M") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    labs(y = "Proportion", x = "Time of Day")
+```
+**Description:** log10
+```{r}
+ggplot(stacked_chart, 
+         aes(x = TimeOnly_POSIX, y = percentage, fill = Glucose_Category)) +
+    geom_area() +
+    scale_x_datetime(date_labels = "%H:%M") +
+    scale_y_log10()+
+    facet_wrap(~ ID, ncol = 2) +  
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+**Description:** Show lower 25% only
+```{r}
+# Reorder "High" to make visualization possible
+stacked_chart_25 <- stacked_chart %>%
+  mutate(
+      Glucose_Category = factor(Glucose_Category, levels = c("Normal", "High", "Low", "Very Low")))
+
+ ggplot(stacked_chart_25, 
+         aes(x = TimeOnly_POSIX, y = percentage, fill = Glucose_Category)) +
+    geom_area() +
+    scale_x_datetime(date_labels = "%H:%M") +
+    coord_cartesian(ylim = c(0, 0.25)) +  # only show until 25%
+    facet_wrap(~ ID, ncol = 2) +  
+    labs(y = "Proportion", x = "Time of Day") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+```
+
 ## Spike analysis
 ### Category Change
-**Description**: How often does the glucose value change form one category to another
+**Description**: How often does the glucose value change from one category to another
 ```{r}
 # Prepare data
 spike_analysis <- cleaned_data_deduplicated %>%
@@ -1245,15 +1293,6 @@ double_data <- cleaned_data_deduplicated %>%
     Hour = hour(Timestamp),
     Minute = minute(Timestamp),
     Time_of_Day = Hour + Minute / 60,
-    ID_Label = case_when(
-      ID == "102Ecosleep" ~ "102",
-      ID == "104Ecosleep" ~ "104",
-      ID == "107EcoSleep" ~ "107",
-      ID == "108EcoSleep" ~ "108",
-      ID == "109EcoSleep" ~ "109",
-      ID == "112EcoSleep" ~ "112",
-      TRUE ~ as.character(ID)
-    )
   )
 
 # Duplicate data: original time + shifted by 24h
@@ -1265,7 +1304,7 @@ double_data_long <- bind_rows(
 # Round down to full hour and keep the original 0–47 factor for correct time ordering
 double_avg <- double_data_long %>%
   mutate(Hour_Rounded = floor(Double_Hour)) %>%
-  group_by(ID_Label, Hour_Rounded) %>%
+  group_by(ID, Hour_Rounded) %>%
   summarise(Avg_Glucose = mean(`Glucose (mg/dl)`, na.rm = TRUE), .groups = "drop") %>%
   mutate(
     Display_Hour = Hour_Rounded %% 24,
@@ -1279,7 +1318,7 @@ double_avg <- double_data_long %>%
 
 
 # Create the plot
-ggplot(double_avg, aes(x = Hour_Factor, y = Avg_Glucose, group = ID_Label, color = ID_Label)) +
+ggplot(double_avg, aes(x = Hour_Factor, y = Avg_Glucose, group = ID, color = ID)) +
   geom_line(size = 1) +
   geom_point(size = 1.5) +
   labs(
@@ -1303,7 +1342,7 @@ ggplot(double_avg, aes(x = Hour_Factor, y = Avg_Glucose, group = ID_Label, color
 ### First fit for every ID
 ```{r}
 # Filter data for ID 102
-fit_data_102 <- double_avg %>% filter(ID_Label == "102")
+fit_data_102 <- double_avg %>% filter(ID == "102")
 
 # Fit cosine model (period 24h)
 cos_fit_102 <- nls(
@@ -1323,14 +1362,14 @@ ggplot(fit_data_102, aes(x = Hour_Rounded)) +
   geom_point(aes(y = Avg_Glucose), color = "blue") +
   geom_line(aes(y = Fitted), color = "red") +
   labs(
-    title = "Cosine Fit for ID 102",
+    title = "Cosine Fit for 102",
     x = "Hour of Day (0–47)",
     y = "Average Glucose (mg/dl)"
   ) +
   theme_minimal()
 
 
-fit_data_104 <- double_avg %>% filter(ID_Label == "104")
+fit_data_104 <- double_avg %>% filter(ID == "104")
 cos_fit_104 <- nls(
   Avg_Glucose ~ A * cos(2 * pi / 24 * Hour_Rounded + phi) + C,
   data = fit_data_104,
@@ -1342,33 +1381,14 @@ ggplot(fit_data_104, aes(x = Hour_Rounded)) +
   geom_point(aes(y = Avg_Glucose), color = "blue") +
   geom_line(aes(y = Fitted), color = "red") +
   labs(
-    title = "Cosine Fit for ID 104",
+    title = "Cosine Fit for 104",
     x = "Hour of Day (0–47)",
     y = "Average Glucose (mg/dl)"
   ) +
   theme_minimal()
 
 
-fit_data_104 <- double_avg %>% filter(ID_Label == "104")
-cos_fit_104 <- nls(
-  Avg_Glucose ~ A * cos(2 * pi / 24 * Hour_Rounded + phi) + C,
-  data = fit_data_104,
-  start = list(A = 10, phi = 0, C = 100)
-)
-fit_data_104 <- fit_data_104 %>%
-  mutate(Fitted = predict(cos_fit_104))
-ggplot(fit_data_104, aes(x = Hour_Rounded)) +
-  geom_point(aes(y = Avg_Glucose), color = "blue") +
-  geom_line(aes(y = Fitted), color = "red") +
-  labs(
-    title = "Cosine Fit for ID 104",
-    x = "Hour of Day (0–47)",
-    y = "Average Glucose (mg/dl)"
-  ) +
-  theme_minimal()
-
-
-fit_data_107 <- double_avg %>% filter(ID_Label == "107")
+fit_data_107 <- double_avg %>% filter(ID == "107")
 
 cos_fit_107 <- nls(
   Avg_Glucose ~ A * cos(2 * pi / 24 * Hour_Rounded + phi) + C,
@@ -1383,14 +1403,14 @@ ggplot(fit_data_107, aes(x = Hour_Rounded)) +
   geom_point(aes(y = Avg_Glucose), color = "blue") +
   geom_line(aes(y = Fitted), color = "red") +
   labs(
-    title = "Cosine Fit for ID 107",
+    title = "Cosine Fit for 107",
     x = "Hour of Day (0–47)",
     y = "Average Glucose (mg/dl)"
   ) +
   theme_minimal()
 
 
-fit_data_108 <- double_avg %>% filter(ID_Label == "108")
+fit_data_108 <- double_avg %>% filter(ID == "108")
 
 cos_fit_108 <- nls(
   Avg_Glucose ~ A * cos(2 * pi / 24 * Hour_Rounded + phi) + C,
@@ -1405,13 +1425,13 @@ ggplot(fit_data_108, aes(x = Hour_Rounded)) +
   geom_point(aes(y = Avg_Glucose), color = "blue") +
   geom_line(aes(y = Fitted), color = "red") +
   labs(
-    title = "Cosine Fit for ID 108",
+    title = "Cosine Fit for 108",
     x = "Hour of Day (0–47)",
     y = "Average Glucose (mg/dl)"
   ) +
   theme_minimal()
 
-fit_data_109 <- double_avg %>% filter(ID_Label == "109")
+fit_data_109 <- double_avg %>% filter(ID == "109")
 
 cos_fit_109 <- nls(
   Avg_Glucose ~ A * cos(2 * pi / 24 * Hour_Rounded + phi) + C,
@@ -1426,14 +1446,14 @@ ggplot(fit_data_109, aes(x = Hour_Rounded)) +
   geom_point(aes(y = Avg_Glucose), color = "blue") +
   geom_line(aes(y = Fitted), color = "red") +
   labs(
-    title = "Cosine Fit for ID 109",
+    title = "Cosine Fit for 109",
     x = "Hour of Day (0–47)",
     y = "Average Glucose (mg/dl)"
   ) +
   theme_minimal()
 
 
-fit_data_112 <- double_avg %>% filter(ID_Label == "112")
+fit_data_112 <- double_avg %>% filter(ID == "112")
 
 cos_fit_112 <- nls(
   Avg_Glucose ~ A * cos(2 * pi / 24 * Hour_Rounded + phi) + C,
@@ -1448,7 +1468,7 @@ ggplot(fit_data_112, aes(x = Hour_Rounded)) +
   geom_point(aes(y = Avg_Glucose), color = "blue") +
   geom_line(aes(y = Fitted), color = "red") +
   labs(
-    title = "Cosine Fit for ID 112",
+    title = "Cosine Fit for 112",
     x = "Hour of Day (0–47)",
     y = "Average Glucose (mg/dl)"
   ) +
@@ -1490,7 +1510,7 @@ ggplot_cosinor.lm(fit, x_str = "X")
 ```{r}
 # create dataset for cosinor model for 102Ecosleep
 glucose_fit_102_data <- cleaned_data_deduplicated %>%
-  filter(ID == "102Ecosleep") %>%    # filter for 102
+  filter(ID == "102") %>%    # filter for 102
   mutate(
     datetime = dmy_hm(DeviceTimestamp),  #  if format TT-MM-JJJJ HH:MM
     dec.time = hour(datetime) + minute(datetime) / 60  # time as decimal hour during the day
@@ -1513,7 +1533,7 @@ ggplot_cosinor.lm(glucose_fit_102)
 ```{r}
 # create dataset for cosinor model for 102Ecosleep
 glucose_fit_104_data <- cleaned_data_deduplicated %>%
-  filter(ID == "104Ecosleep") %>%    # filter for 104
+  filter(ID == "104") %>%    # filter for 104
   mutate(
     datetime = dmy_hm(DeviceTimestamp),  #  if format TT-MM-JJJJ HH:MM
     dec.time = hour(datetime) + minute(datetime) / 60  # time as decimal hour during the day
@@ -1536,7 +1556,7 @@ ggplot_cosinor.lm(glucose_fit_104)
 ```{r}
 # create dataset for cosinor model for 107Ecosleep
 glucose_fit_107_data <- cleaned_data_deduplicated %>%
-  filter(ID == "107EcoSleep") %>%    # filter for 107
+  filter(ID == "107") %>%    # filter for 107
   mutate(
     datetime = dmy_hm(DeviceTimestamp),  #  if format TT-MM-JJJJ HH:MM
     dec.time = hour(datetime) + minute(datetime) / 60  # time as decimal hour during the day
@@ -1559,7 +1579,7 @@ ggplot_cosinor.lm(glucose_fit_107)
 ```{r}
 # create dataset for cosinor model for 107Ecosleep
 glucose_fit_108_data <- cleaned_data_deduplicated %>%
-  filter(ID == "108EcoSleep") %>%    # filter for 107
+  filter(ID == "108") %>%    # filter for 107
   mutate(
     datetime = dmy_hm(DeviceTimestamp),  #  if format TT-MM-JJJJ HH:MM
     dec.time = hour(datetime) + minute(datetime) / 60  # time as decimal hour during the day
@@ -1582,7 +1602,7 @@ ggplot_cosinor.lm(glucose_fit_108)
 ```{r}
 # create dataset for cosinor model for 107Ecosleep
 glucose_fit_109_data <- cleaned_data_deduplicated %>%
-  filter(ID == "109EcoSleep") %>%    # filter for 109
+  filter(ID == "109") %>%    # filter for 109
   mutate(
     datetime = dmy_hm(DeviceTimestamp),  #  if format TT-MM-JJJJ HH:MM
     dec.time = hour(datetime) + minute(datetime) / 60  # time as decimal hour during the day
@@ -1605,7 +1625,7 @@ ggplot_cosinor.lm(glucose_fit_109)
 ```{r}
 # create dataset for cosinor model for 112Ecosleep
 glucose_fit_112_data <- cleaned_data_deduplicated %>%
-  filter(ID == "112EcoSleep") %>%    # filter for 112
+  filter(ID == "112") %>%    # filter for 112
   mutate(
     datetime = dmy_hm(DeviceTimestamp),  #  if format TT-MM-JJJJ HH:MM
     dec.time = hour(datetime) + minute(datetime) / 60  # time as decimal hour during the day
@@ -1806,13 +1826,15 @@ summary(glucose_fit_112)
 summary(cos_fit_112_orig)
 ```
 ### Moving window
-**Description:** Cos for 102: Moving window for 102
+**Description:** Cos for 102: Moving window for 102 
 
 ```{r}
   # Storage for results
   moving_window_102 <- data.frame(
     Window_Start = as.POSIXct(character()),
     Amp = numeric(),
+    Acrophase_Rad = numeric(),
+    Acrophase_Raw = numeric(),
     Acrophase_Raw_Hours = numeric(),
     Max_Time_Hours = numeric(),
     Min_Time_Hours = numeric(),
@@ -1879,6 +1901,8 @@ summary(cos_fit_112_orig)
     moving_window_102 <- rbind(moving_window_102, data.frame(
       Window_Start = current_start_102,
       Amp = amp_102,
+      Acrophase_Rad = acr_102,
+      Acrophase_Raw = acrophase_raw_102,
       Acrophase_Raw_Hours = (acrophase_raw_102 + 24) %% 24,
       Max_Time_Hours = max_time_102,
       Min_Time_Hours = min_time_102,
@@ -1907,12 +1931,14 @@ ggplot(moving_window_102, aes(x = Window_Start)) +
   ) +
   theme_minimal()
 ```
-**Description:** Moving Window Cos for 102: Define maxima and minima: Maxima >12h, Minima <12h + min. 400 datapoints are needed to calculate the cos
+**Description:** Moving Window Cos for 102: min. 400 datapoints are needed to calculate the cos + using package cosinor.lm()
 ```{r}
 # Empty dataframe to store results
 moving_window_102 <- data.frame(
   Window_Start = as.POSIXct(character()),
   Amp = numeric(),
+  Acrophase_Rad = numeric(),
+  Acrophase_Raw = numeric(),
   Acrophase_Raw_Hours = numeric(),
   Max_Time_Hours = numeric(),
   Min_Time_Hours = numeric(),
@@ -1980,17 +2006,13 @@ while (current_start_102 + window_length <= end_time_mv_102) {
       max_time_102 <- (acrophase_norm_102 + 12) %% 24
     }
     
-    # Ensure max > 12 and min < 12 (if desired visual convention)
-    if (max_time_102 < 12) {
-      temp_102 <- max_time_102
-      max_time_102 <- min_time_102
-      min_time_102 <- temp_102
-    }
     
     # Store results
     moving_window_102 <- rbind(moving_window_102, data.frame(
       Window_Start = current_start_102,
       Amp = amp_102,
+      Acrophase_Rad = acr_102,
+      Acrophase_Raw = acrophase_raw_102,
       Acrophase_Raw_Hours = acrophase_norm_102,
       Max_Time_Hours = max_time_102,
       Min_Time_Hours = min_time_102,
@@ -2026,12 +2048,113 @@ ggplot(moving_window_102, aes(x = Window_Start)) +
   theme_minimal(base_size = 12) +
   theme(legend.position = "bottom")
 ```
+**Description:** Moving Window Cos for 102 with lm
+```{r}
+ # Empty Dataframe to store results
+ moving_window_102_l <- data.frame(
+   Window_Start = as.POSIXct(character()),
+   Amp = numeric(),
+   Acrophase_Rad = numeric(),
+   Acrophase_Raw = numeric(),
+   Acrophase_Raw_Hours = numeric(),
+   Max_Time_Hours = numeric(),
+   Min_Time_Hours = numeric(),
+   Intercept = numeric(),
+   stringsAsFactors = FALSE
+ )
+ 
+ # Defining time boundaries
+ start_time_mv_102 <- min(glucose_fit_102_data$datetime)
+ end_time_mv_102   <- max(glucose_fit_102_data$datetime)
+ 
+ # window and step sizes
+ window_length <- days(3)
+ step_size <- days(1)
+ current_start_102 <- start_time_mv_102
+ 
+ # Sliding window loop
+ while (current_start_102 + window_length <= end_time_mv_102) {
+   
+   current_end_102 <- current_start_102 + window_length
+   
+   # Filter Data within window
+   window_data_102_l <- glucose_fit_102_data %>%
+     filter(datetime >= current_start_102 & datetime < current_end_102)
+   
+   # Skip windows with too few data points
+   if (nrow(window_data_102) < 400) {
+     current_start_102 <- current_start_102 + step_size
+     next
+   }
+   
+   # calculate cosinus components
+   dec_time <- window_data_102_l$dec.time
+   window_data_102_l$cos_part <- cos(2 * pi * dec_time / 24)
+   window_data_102_l$sin_part <- sin(2 * pi * dec_time / 24)
+   
+   # fit with linear regression
+   fit_test <- tryCatch({
+     lm(`Glucose (mg/dl)` ~ cos_part + sin_part, data = window_data_102_l)
+   }, error = function(e) NA)
+   
+   # test
+   if (!inherits(fit_test, "lm")) {
+     current_start_102 <- current_start_102 + step_size
+     next
+   }
+   
+   coefs <- coef(fit_test)
+   
+   # skip if NA in relevant coefficents
+   if (any(is.na(coefs[c("(Intercept)", "cos_part", "sin_part")]))) {
+     current_start_102 <- current_start_102 + step_size
+     next
+   }
+   
+   # extract coefficients
+   intercept_102_l <- coefs["(Intercept)"]
+   beta_102      <- coefs["cos_part"]
+   gamma_102     <- coefs["sin_part"]
+   
+   # amolitude
+   amp_102_l <- sqrt(beta_102^2 + gamma_102^2)
+   
+   # Acrophase (radiant)
+   acr_rad_102_l <- atan2(-gamma_102, beta_102)  # Wichtig: Minuszeichen
+   
+   # Acrophase (hours)
+   acrophase_raw_102_l <- (acr_rad_102_l * 24) / (2 * pi)
+   acrophase_norm_102_l <- (acrophase_raw_102_l + 24) %% 24
+   
+   # max and min time
+   max_time_102_l <- acrophase_norm_102_l
+   min_time_102_l <- (acrophase_norm_102_l + 12) %% 24
+   
+   # store results
+   moving_window_102_l <- rbind(moving_window_102_l, data.frame(
+     Window_Start = current_start_102,
+     Amp = amp_102_l,
+     Acrophase_Rad = acr_rad_102_l,
+     Acrophase_Raw = acrophase_raw_102_l,
+     Acrophase_Raw_Hours = acrophase_norm_102_l,
+     Max_Time_Hours = max_time_102_l,
+     Min_Time_Hours = min_time_102_l,
+     Intercept = intercept_102_l
+   ))
+   
+   # next window
+   current_start_102 <- current_start_102 + step_size
+ }
+```
+
 **Description:** Moving Window Cos for 104
 ```{r}
 # Empty dataframe to store results
 moving_window_104 <- data.frame(
   Window_Start = as.POSIXct(character()),
   Amp = numeric(),
+  Acrophase_Rad = numeric(),
+  Acrophase_Raw = numeric(),
   Acrophase_Raw_Hours = numeric(),
   Max_Time_Hours = numeric(),
   Min_Time_Hours = numeric(),
@@ -2110,6 +2233,8 @@ while (current_start_104 + window_length <= end_time_mv_104) {
     moving_window_104 <- rbind(moving_window_104, data.frame(
       Window_Start = current_start_104,
       Amp = amp_104,
+      Acrophase_Rad = acr_104,
+      Acrophase_Raw = acrophase_raw_104,
       Acrophase_Raw_Hours = acrophase_norm_104,
       Max_Time_Hours = max_time_104,
       Min_Time_Hours = min_time_104,
@@ -2151,6 +2276,8 @@ ggplot(moving_window_104, aes(x = Window_Start)) +
 moving_window_107 <- data.frame(
   Window_Start = as.POSIXct(character()),
   Amp = numeric(),
+  Acrophase_Rad = numeric(),
+  Acrophase_Raw = numeric(),
   Acrophase_Raw_Hours = numeric(),
   Max_Time_Hours = numeric(),
   Min_Time_Hours = numeric(),
@@ -2229,6 +2356,8 @@ while (current_start_107 + window_length <= end_time_mv_107) {
     moving_window_107 <- rbind(moving_window_107, data.frame(
       Window_Start = current_start_107,
       Amp = amp_107,
+      Acrophase_Rad = acr_107,
+      Acrophase_Raw = acrophase_raw_107,
       Acrophase_Raw_Hours = acrophase_norm_107,
       Max_Time_Hours = max_time_107,
       Min_Time_Hours = min_time_107,
@@ -2270,6 +2399,8 @@ ggplot(moving_window_107, aes(x = Window_Start)) +
 moving_window_108 <- data.frame(
   Window_Start = as.POSIXct(character()),
   Amp = numeric(),
+  Acrophase_Rad = numeric(),
+  Acrophase_Raw = numeric(),
   Acrophase_Raw_Hours = numeric(),
   Max_Time_Hours = numeric(),
   Min_Time_Hours = numeric(),
@@ -2348,6 +2479,8 @@ while (current_start_108 + window_length <= end_time_mv_108) {
     moving_window_108 <- rbind(moving_window_108, data.frame(
       Window_Start = current_start_108,
       Amp = amp_108,
+      Acrophase_Rad = acr_108,
+      Acrophase_Raw = acrophase_raw_108,
       Acrophase_Raw_Hours = acrophase_norm_108,
       Max_Time_Hours = max_time_108,
       Min_Time_Hours = min_time_108,
@@ -2389,6 +2522,8 @@ ggplot(moving_window_108, aes(x = Window_Start)) +
 moving_window_109 <- data.frame(
   Window_Start = as.POSIXct(character()),
   Amp = numeric(),
+  Acrophase_Rad = numeric(),
+  Acrophase_Raw = numeric(),
   Acrophase_Raw_Hours = numeric(),
   Max_Time_Hours = numeric(),
   Min_Time_Hours = numeric(),
@@ -2467,6 +2602,8 @@ while (current_start_109 + window_length <= end_time_mv_109) {
     moving_window_109 <- rbind(moving_window_109, data.frame(
       Window_Start = current_start_109,
       Amp = amp_109,
+      Acrophase_Rad = acr_109,
+      Acrophase_Raw = acrophase_raw_109,
       Acrophase_Raw_Hours = acrophase_norm_109,
       Max_Time_Hours = max_time_109,
       Min_Time_Hours = min_time_109,
@@ -2508,6 +2645,8 @@ ggplot(moving_window_109, aes(x = Window_Start)) +
 moving_window_112 <- data.frame(
   Window_Start = as.POSIXct(character()),
   Amp = numeric(),
+  Acrophase_Rad = numeric(),
+  Acrophase_Raw = numeric(),
   Acrophase_Raw_Hours = numeric(),
   Max_Time_Hours = numeric(),
   Min_Time_Hours = numeric(),
@@ -2586,6 +2725,8 @@ while (current_start_112 + window_length <= end_time_mv_112) {
     moving_window_112 <- rbind(moving_window_112, data.frame(
       Window_Start = current_start_112,
       Amp = amp_112,
+      Acrophase_Rad = acr_112,
+      Acrophase_Raw = acrophase_raw_112,
       Acrophase_Raw_Hours = acrophase_norm_112,
       Max_Time_Hours = max_time_112,
       Min_Time_Hours = min_time_112,
@@ -2621,7 +2762,7 @@ ggplot(moving_window_112, aes(x = Window_Start)) +
   theme_minimal(base_size = 12) +
   theme(legend.position = "bottom")
 ```
-### Seasonal Cosinus Fit
+### Seasonal Cosinus Fit: Means
 **Description:** Define Seasons
 ```{r}
   seasons <- function(date) {
@@ -2808,6 +2949,32 @@ amplitude_means_112 <- moving_window_112 %>%
          y = "Mean Intercept") +
     theme(plot.title = element_text(hjust = 0.5))
 ```
+### Seasonal Cosinus Fit: Raw Data
+**Description:** Bind Data Sets
+```{r}
+  # IDs und zugehörige DataFrames
+  id_list <- c(102, 104, 107, 108, 109, 112)
+  
+  # Liste der DataFrames in gleicher Reihenfolge (z. B. vorher erstellt)
+  moving_window_list <- list(
+    moving_window_102,
+    moving_window_104,
+    moving_window_107,
+    moving_window_108,
+    moving_window_109,
+    moving_window_112
+  )
+  
+  # Füge die ID zu jedem DataFrame hinzu
+  moving_window_data <- Map(function(df, id) {
+    df$ID <- id
+    return(df)
+  }, moving_window_list, id_list)
+  
+  # Binde alles zusammen
+  moving_window_data <- bind_rows(moving_window_data)
+```
+
 ### Polar Plots 
 #### Polar Plot for Max and Min for ID 102
 **Description:** Code for Polar Plot (ID 102)
@@ -2880,30 +3047,6 @@ amplitude_means_112 <- moving_window_112 %>%
     )
 ```
 #### Polar Plot for Max for all IDs
-**Description:** Bind Data Sets
-```{r}
-  # IDs und zugehörige DataFrames
-  id_list <- c(102, 104, 107, 108, 109, 112)
-  
-  # Liste der DataFrames in gleicher Reihenfolge (z. B. vorher erstellt)
-  moving_window_list <- list(
-    moving_window_102,
-    moving_window_104,
-    moving_window_107,
-    moving_window_108,
-    moving_window_109,
-    moving_window_112
-  )
-  
-  # Füge die ID zu jedem DataFrame hinzu
-  moving_window_data <- Map(function(df, id) {
-    df$ID <- id
-    return(df)
-  }, moving_window_list, id_list)
-  
-  # Binde alles zusammen
-  moving_window_data <- bind_rows(moving_window_data)
-```
 
 ```{r}
 # Rad-Winkel berechnen
@@ -2958,13 +3101,12 @@ amplitude_means_112 <- moving_window_112 %>%
                  linewidth = 1.2) +
     coord_polar(start = 0) +
     scale_x_continuous(
-      breaks = seq(0, 2*pi, length.out = 25),
-      labels = 0:24,
-      limits = c(0, 2*pi)
-    ) +
-    scale_y_continuous(limits = c(0, 1)) +
+    breaks = seq(0, 2 * pi * 23/24, length.out = 24),
+    labels = 0:23,
+    limits = c(0, 2 * pi)) +
+    scale_y_continuous(limits = c(0, 1), labels = NULL) +
     labs(
-      title = "Acrophase Maxima + SD for all IDs",
+      title = "Acrophase + SD for all IDs",
       x = "Time of Day",
       y = NULL,
       color = "Pointer",
@@ -2983,7 +3125,7 @@ amplitude_means_112 <- moving_window_112 %>%
 library(dplyr)
 library(ggplot2)
 
-# --- Feste Reihenfolge der IDs für Farben & vertikale Platzierung ---
+  # --- Feste Reihenfolge der IDs für Farben & vertikale Platzierung ---
 id_list <- sort(unique(moving_window_data$ID))
 
 # --- Zusammenfassung: Durchschnitt & SD des Maxima pro Season & ID ---
@@ -3000,8 +3142,8 @@ season_summary <- moving_window_data %>%
     xmax = avg_max_rad + sd_max_rad,
     ID = factor(ID, levels = id_list),
     # dynamische vertikale Positionen, um Überlappung zu vermeiden
-    rect_ymin = 1 - 0.04 * (as.numeric(ID) - 1),
-    rect_ymax = rect_ymin + 0.04
+    rect_ymin = 0.95 - 0.05 * (as.numeric(ID) - 1),
+    rect_ymax = rect_ymin + 0.05
   )
 
 # --- Zeiger-Daten extrahieren ---
@@ -3022,13 +3164,13 @@ ggplot() +
                linewidth = 1.2) +
   coord_polar(start = 0) +
   scale_x_continuous(
-    breaks = seq(0, 2 * pi, length.out = 25),
-    labels = 0:24,
+    breaks = seq(0, 2 * pi * 23/24, length.out = 24),
+    labels = 0:23,
     limits = c(0, 2 * pi)
   ) +
-  scale_y_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 1.05), labels = NULL) +
   labs(
-    title = "Acrophase Maxima + SD per Season",
+    title = "Acrophase + SD per Season",
     x = "Time of Day",
     y = NULL,
     color = "ID",
@@ -3045,5 +3187,5 @@ ggplot() +
 ```
 
 
-```
+
 
