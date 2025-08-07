@@ -22,7 +22,7 @@ library(stringr)
 **Description:** Define directory and combine single data files into one dataset
 ```{r}
 # Define the directory containing the files
-data_directory <- "/Users/linabecker/Documents/M.Sc. Health Science/Masterarbeit/Masterarbeit"
+data_directory <- "/Users/linabecker/Documents/M.Sc. Health Science/Masterarbeit/Masterarbeit/Datensätze"
 
 # List all CSV files in the directory
 file_list <- list.files(path = data_directory, pattern = "*.csv", full.names = TRUE)
@@ -298,7 +298,7 @@ conflict_summary <- conflicting_duplicates %>%
 conflict_summary
 ```
 
-**Description:** Plotting those exact duplicates
+**Description:** Plotting those conflicting duplicates
 ```{r}
 # 1. laufende Nummerierung erstellen
 conflicting_duplicates <- conflicting_duplicates %>%
@@ -422,21 +422,21 @@ time_gaps_plot <- time_gaps %>%
 #### Plotting those timegaps
 ```{r}
 ggplot(time_gaps_plot, aes(x = Timestamp)) +
-  # Normaler Bereich (4–6 Minuten) – als Hintergrund
+  # Normal (4–6 Minutes) – as Background
   geom_point(
     data = subset(time_gaps_plot, Gap_Category == "Normal (4-6 min)"),
     aes(y = Time_Diff_Minutes),
-    color = "gray70", alpha = 0.8, size = 1.5
+    color = "gray70", alpha = 0.5, size = 1.5
   ) +
   
-  # Gaps > 6 Minuten – rot
+  # Gaps > 6 Minutes – red
   geom_point(
     data = subset(time_gaps_plot, Gap_Category == "Over 6 min"),
     aes(y = Time_Diff_Minutes),
     color = "red3", alpha = 0.8, size = 1.5
   ) +
   
-  # Gaps zwischen 1–3 Minuten – grün
+  # Gaps 1–3 Minutes – green
   geom_point(
     data = subset(time_gaps_plot, Gap_Category == "Between 1 and 3"),
     aes(y = Time_Diff_Minutes),
@@ -444,12 +444,12 @@ ggplot(time_gaps_plot, aes(x = Timestamp)) +
   ) +
   
   labs(
-    title = "Zeitabstände zwischen Glukosemessungen pro ID",
-    subtitle = "Rot = >6min, Grün = 1–3min, Grau = 4–6min",
-    x = "Zeitpunkt",
-    y = "Zeitabstand zur vorherigen Messung (Minuten)"
+    title = "Time Intervals Between Timestamps per ID",
+    subtitle = "red = >6min, green = 1–3min, grey = 4–6min",
+    x = "Time",
+    y = "Time Interval Between Timestamps (min)"
   ) +
-  facet_wrap(~ ID, scales = "free_x") +
+  facet_wrap(~ ID) +
   theme_minimal() +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1),
@@ -611,7 +611,7 @@ measurement_count_112 <- nrow(filtered_data_112)
   group_by(ID, Glucose_Category) %>%
   summarise(Count = n(), .groups = "drop") %>%
   group_by(ID) %>%
-  mutate(Percentage = round(Count / sum(Count) * 100, 1))
+  mutate(Percentage = round(Count / sum(Count) * 100, 2))
 ```
 ### Hyper and Hypo in Day and Night
 **Description**: Adding Day and Night to Dataset: Night from 22h to 6h
@@ -639,7 +639,7 @@ cleaned_data_deduplicated %>%
   group_by(ID, Time_of_Day, Glucose_Category) %>%
   summarise(Count = n(), .groups = "drop") %>%
   group_by(ID, Time_of_Day) %>%
-  mutate(Percentage = round(Count / sum(Count) * 100, 1)) %>%
+  mutate(Percentage = round(Count / sum(Count) * 100, 2)) %>%
   kable()
 ```
 **Description**: Hyper and Hypo clinically split 
@@ -658,7 +658,7 @@ cleaned_data_deduplicated %>%
   group_by(ID, Time_of_Day, Glucose_Category) %>%
   summarise(Count = n(), .groups = "drop") %>%
   group_by(ID, Time_of_Day) %>%
-  mutate(Percentage = round(Count / sum(Count) * 100, 1)) %>%
+  mutate(Percentage = round(Count / sum(Count) * 100, 2)) %>%
   kable()
 ```
 ### Create a Graph
@@ -903,8 +903,8 @@ ggplot(spike_percent, aes(x = Spike_Direction, y = Percentage, fill = Spike_Dire
   coord_flip() +
   facet_grid(ID ~ Time_of_Day) +  # Rows = IDs, Columns = Day/Night
   labs(
-    title = "Transitions Between Glucose Categories (Spikes)",
-    x = "Transition",
+    title = "Changes Between Glucose Categories (Spikes)",
+    x = "Category Changes",
     y = "Percentage (%)"
   ) +
   theme_minimal() +
@@ -920,8 +920,8 @@ ggplot(spike_analysis, aes(x = Spike_Direction, y = Spike_Count, fill = Spike_Di
   facet_wrap(~ ID) +
   coord_flip() +
   labs(
-    title = "Transitions Between Glucose Categories (Spikes)",
-    x = "Transition",
+    title = "Changes Between Glucose Categories (Spikes)",
+    x = "Category Change",
     y = "Count"
   ) +
   theme_minimal() +
@@ -938,16 +938,15 @@ spike_percent <- spike_percent %>%
     To = factor(To, levels = category_levels)
   )
 
-
-ggplot(spike_percent, aes(x = From, y = To, fill = Percentage)) +
+ggplot(spike_percent, aes(x = To, y = From, fill = Percentage)) +
   geom_tile(color = "white") +
   geom_text(aes(label = Percentage), size = 3) +
   facet_grid(ID ~ Time_of_Day) +
   scale_fill_gradient(low = "white", high = "steelblue") +
   labs(
     title = "Transition Heatmap Between Glucose Categories",
-    x = "Previous Category",
-    y = "Current Category",
+    x = "Current Category",
+    y = "Previous Category",
     fill = "Percent (%)"
   ) +
   theme_minimal() +
@@ -955,11 +954,10 @@ ggplot(spike_percent, aes(x = From, y = To, fill = Percentage)) +
     axis.text.x = element_text(angle = 45, hjust = 1),
     strip.text = element_text(face = "bold")
   )
+
 ```
 **Description**: Creat a heatmap with heatmap() function and for all IDs
 ```{r}
-
-
 library(pheatmap)
 
 # Summarise raw counts, not percentages
@@ -1004,10 +1002,9 @@ pheatmap(
   color = colorRampPalette(c("white", "steelblue"))(100),
   cluster_rows = FALSE,
   cluster_cols = FALSE,
-  main = "Transition Heatmap (Overall Study Percentage)",
+  main = "Category Change (Overall Study Percentage)",
   angle_col = 45
 )
-
 ```
 ### Spike Duration
 ```{r}
@@ -1039,7 +1036,49 @@ spike_durations <- cleaned_data_deduplicated %>%
 # View spike durations
 head(spike_durations)
 ```
-**Description**: Plot the Spikes over time
+**Description:** Plot the Statistics of Spike Duration
+```{r}
+# overall statistics
+spike_stats <- spike_durations %>%
+  group_by(Category) %>%
+  summarise(
+    Count = n(),
+    Median_Duration = median(Duration_min),
+    Mean_Duration = round(mean(Duration_min), 1),
+    Max_Duration = max(Duration_min),
+    Min_Duration = min(Duration_min),
+    .groups = "drop"
+  )
+
+# statistics per ID
+
+spike_subject_stats <- spike_durations %>%
+  group_by(ID, Category) %>%
+  summarise(
+    Episodes = n(),
+    Total_Duration = sum(Duration_min),
+    Median_Duration = median(Duration_min),
+    .groups = "drop"
+  )
+```
+**Description:** Plot the Frequency of Glucose Spike Duration
+```{r}
+ggplot(spike_durations, aes(x = Duration_min, fill = Category)) +
+  geom_bar(position = "stack") +
+  facet_wrap(~ ID) +
+  labs(
+    title = "Frequency of Glucose Spike Durations by Category",
+    x = "Spike Duration (minutes)",
+    y = "Count",
+    fill = "Glucose Category"
+  ) +
+  coord_cartesian(xlim = c(0, 200)) + # scale only until 200, for the most frequent durations
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+```
+**Description:** Plot the Spikes over time
 ```{r}
 ggplot(spike_durations, aes(x = Start, xend = End, y = ID, yend = ID, color = Category)) +
   geom_segment(size = 8) +
@@ -1070,24 +1109,45 @@ cleaned_data_deduplicated <- cleaned_data_deduplicated %>%
   )
 ```
 ### Plotting Day vs Night
-**Description**: Plot 1
+**Description:** Plot 1
 ```{r}
 ggplot(cleaned_data_deduplicated, aes(x = Timestamp, y = `Glucose (mg/dl)`, color = Time_of_Day)) +
-  geom_point(alpha = 0.5) +
-  facet_wrap(~ ID, scales = "free_x") +
-  theme_minimal()
+  geom_point(alpha = 0.5, size = 0.8) +
+  facet_wrap(~ ID) +
+  labs(color = "Time of Day", title = "Glucose Values over Time: Day vs. Night")+
+  theme_minimal()+
+   theme(
+    legend.position = "top",
+    strip.text = element_text(face = "bold"),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+   )
 
 ggplot(cleaned_data_deduplicated, aes(x = Time_of_Day, y = `Glucose (mg/dl)`, fill = Time_of_Day)) +
-  geom_boxplot(alpha = 0.7) +
+  geom_boxplot(alpha = 0.5) +
   facet_wrap(~ ID) +
   theme_minimal() +
-  labs(title = "Glukosevalue: Day vs. Night", x = "", y = "Glucose (mg/dl)")
+  labs(title = "Glucose Values: Day vs. Night",fill = "Time of Day" , x = "", y = "Glucose (mg/dl)")
 ```
-**Description**: Plot 2
+**Description:** Table for numbers of boxplot
+```{r}
+glucose_summary_table <- cleaned_data_deduplicated %>%
+  group_by(ID, Time_of_Day) %>%
+  summarise(
+    n = n(),
+    Median = median(`Glucose (mg/dl)`, na.rm = TRUE),
+    Mean = round(mean(`Glucose (mg/dl)`, na.rm = TRUE), 1),
+    Min = min(`Glucose (mg/dl)`, na.rm = TRUE),
+    Q1 = quantile(`Glucose (mg/dl)`, 0.25, na.rm = TRUE),
+    Q3 = quantile(`Glucose (mg/dl)`, 0.75, na.rm = TRUE),
+    Max = max(`Glucose (mg/dl)`, na.rm = TRUE),
+    .groups = "drop"
+  )
+```
+**Description:** Plot 2
 ```{r}
 ggplot(cleaned_data_deduplicated, aes(x = Timestamp, y = `Glucose (mg/dl)`, color = Time_of_Day)) +geom_point(alpha = 0.3, size = 1) +
   geom_smooth(method = "loess", se = FALSE) +
-  facet_wrap(~ ID, scales = "free_x") +
+  facet_wrap(~ ID) +
   scale_color_manual(values = c("Day" = "orange3", "Night" = "midnightblue")) +
   labs(
     title = "Glucose trend over time: Day vs. Night",
@@ -1810,7 +1870,275 @@ summary(cos_fit_112)
 summary(glucose_fit_112)
 summary(cos_fit_112_orig)
 ```
+### Cosine fit with lm()
+**Description:** Fit over whole dataset
+```{r}
+# Step 1: Prepare datetime and Cosinor components
+glucose_fit_data <- cleaned_data_deduplicated %>%
+  mutate(
+    datetime = dmy_hm(DeviceTimestamp), 
+    dec.time = hour(datetime) + minute(datetime) / 60,
+    cos_part = cos(2 * pi * dec.time / 24),
+    sin_part = sin(2 * pi * dec.time / 24)
+  )
+
+# Step 2: Initialize list to collect data with predictions
+all_predictions <- list()
+summary_list <- list()
+ids <- unique(glucose_fit_data$ID)
+
+# Step 3: Loop through each ID
+for (id in ids) {
+  df <- glucose_fit_data %>% filter(ID == id)
+  
+  # Fit Cosinor model
+  fit_lm <- lm(`Glucose (mg/dl)` ~ cos_part + sin_part, data = df)
+  df$predicted_glucose <- predict(fit_lm)
+  
+  # Save predicted data
+  all_predictions[[length(all_predictions) + 1]] <- df
+  
+  # Save summary (optional)
+  coefs <- coef(fit_lm)
+  intercept <- coefs["(Intercept)"]
+  beta <- coefs["cos_part"]
+  gamma <- coefs["sin_part"]
+  
+  amp <- sqrt(beta^2 + gamma^2)
+  acr_rad <- atan2(gamma, beta)
+  acr_hr <- (acr_rad * 24 / (2 * pi)) %% 24
+  max_time <- acr_hr
+  min_time <- (acr_hr + 12) %% 24
+  max_value <- intercept + amp
+  min_value <- intercept - amp
+  
+  summary_list[[length(summary_list) + 1]] <- data.frame(
+    Patient_ID = id,
+    Window_Start = min(df$datetime, na.rm = TRUE),
+    Window_End = max(df$datetime, na.rm = TRUE),
+    N_Observations = nrow(df),
+    Intercept_lm = intercept,
+    Amp_lm = amp,
+    Acrophase_Rad_lm = acr_rad,
+    Acrophase_Hours_lm = acr_hr,
+    MaxTime_Hours_lm = max_time,
+    MinTime_Hours_lm = min_time,
+    MaxValue_lm = max_value,
+    MinValue_lm = min_value
+  )
+}
+
+# Step 4: Combine data
+cosinor_summary <- do.call(rbind, summary_list)
+plot_data <- bind_rows(all_predictions)
+plot_data$ID <- as.factor(plot_data$ID)  # for facetting
+
+# Step 5: Plot with facets
+ggplot(plot_data, aes(x = dec.time)) +
+  geom_point(aes(y = `Glucose (mg/dl)`), color = "blue", alpha = 0.4, size = 1.2) +
+  geom_line(aes(y = predicted_glucose), color = "red", size = 1) +
+  facet_wrap(~ ID, scales = "free_y") +
+  labs(
+    title = "Cosinor Fits for All Patients",
+    x = "Time of Day (decimal hours)",
+    y = "Glucose (mg/dl)"
+  ) +
+  theme_minimal() +
+  theme(strip.text = element_text(face = "bold"))
+
+```
+**Description:** Fit for every day
+```{r}
+# Step 1: Prepare datetime and Cosinor components
+glucose_fit_data <- cleaned_data_deduplicated %>%
+  mutate(
+    datetime = dmy_hm(DeviceTimestamp), 
+    date = as.Date(datetime),
+    dec.time = hour(datetime) + minute(datetime) / 60,
+    cos_part = cos(2 * pi * dec.time / 24),
+    sin_part = sin(2 * pi * dec.time / 24)
+  )
+
+# Step 2: Initialize collectors
+all_predictions <- list()
+summary_list <- list()
+
+# Step 3: Loop over each ID and Date
+ids <- unique(glucose_fit_data$ID)
+
+for (id in ids) {
+  df_id <- glucose_fit_data %>% filter(ID == id)
+  dates <- unique(df_id$date)
+  
+  for (d in dates) {
+    df_day <- df_id %>% filter(date == d)
+    
+    # Only fit if enough data
+    if (nrow(df_day) < 3 || all(is.na(df_day$`Glucose (mg/dl)`))) next
+    
+    fit <- lm(`Glucose (mg/dl)` ~ cos_part + sin_part, data = df_day)
+    df_day$predicted_glucose <- predict(fit)
+    
+    # Store prediction
+    all_predictions[[length(all_predictions) + 1]] <- df_day
+    
+    # Cosinor summary
+    coefs <- coef(fit)
+    intercept <- coefs["(Intercept)"]
+    beta <- coefs["cos_part"]
+    gamma <- coefs["sin_part"]
+    
+    amp <- sqrt(beta^2 + gamma^2)
+    acr_rad <- atan2(gamma, beta)
+    acr_hr <- (acr_rad * 24 / (2 * pi)) %% 24
+    
+    summary_list[[length(summary_list) + 1]] <- data.frame(
+      Patient_ID = id,
+      Date = d,
+      Intercept = intercept,
+      Amplitude = amp,
+      Acrophase_Rad = acr_rad,
+      Acrophase_Hours = acr_hr,
+      N_Obs = nrow(df_day)
+    )
+  }
+}
+
+# Step 4: Combine results
+cosinor_daily_summary <- do.call(rbind, summary_list)
+cosinor_daily_predictions <- bind_rows(all_predictions)
+```
+**Description:** Check fit with 14-day plot
+```{r}
+## ID 102
+# Filter for ID 102 and select first 14 dates
+df_102_first14 <- cosinor_daily_predictions %>%
+  filter(ID == "102") %>%
+  mutate(date = as.Date(datetime)) %>%
+  filter(date %in% sort(unique(date))[1:14])  # keep only first 14 days
+
+# Plot with facets
+ggplot(df_102_first14, aes(x = datetime)) +
+  geom_point(aes(y = `Glucose (mg/dl)`), alpha = 0.4, size = 1.2, color = "blue") +
+  geom_line(aes(y = predicted_glucose), color = "red", size = 1) +
+  labs(
+    title = "Daily Cosinor Fits for ID 102 – First 14 Days",
+    x = "Time of Day",
+    y = "Glucose (mg/dl)"
+  ) +
+  scale_x_datetime(date_labels = "%H:%M", date_breaks = "3 hours") +
+  theme_minimal(base_size = 12)+
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1))
+
+## ID 104
+# Filter for ID 104 and select first 14 dates
+df_104_first14 <- cosinor_daily_predictions %>%
+  filter(ID == "104") %>%
+  mutate(date = as.Date(datetime)) %>%
+  filter(date %in% sort(unique(date))[1:14])  # keep only first 14 days
+
+# Plot with facets
+ggplot(df_104_first14, aes(x = datetime)) +
+  geom_point(aes(y = `Glucose (mg/dl)`), alpha = 0.4, size = 1.2, color = "blue") +
+  geom_line(aes(y = predicted_glucose), color = "red", size = 1) +
+  labs(
+    title = "Daily Cosinor Fits for ID 104 – First 14 Days",
+    x = "Time of Day",
+    y = "Glucose (mg/dl)"
+  ) +
+  scale_x_datetime(date_labels = "%H:%M", date_breaks = "3 hours") +
+  theme_minimal(base_size = 12)+
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1))
+
+## ID 107
+# Filter for ID 102 and select first 14 dates
+df_107_first14 <- cosinor_daily_predictions %>%
+  filter(ID == "107") %>%
+  mutate(date = as.Date(datetime)) %>%
+  filter(date %in% sort(unique(date))[1:14])  # keep only first 14 days
+
+# Plot with facets
+ggplot(df_107_first14, aes(x = datetime)) +
+  geom_point(aes(y = `Glucose (mg/dl)`), alpha = 0.4, size = 1.2, color = "blue") +
+  geom_line(aes(y = predicted_glucose), color = "red", size = 1) +
+  labs(
+    title = "Daily Cosinor Fits for ID 107 – First 14 Days",
+    x = "Time of Day",
+    y = "Glucose (mg/dl)"
+  ) +
+  scale_x_datetime(date_labels = "%H:%M", date_breaks = "3 hours") +
+  theme_minimal(base_size = 12)+
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1))
+
+## ID 108
+# Filter for ID 102 and select first 14 dates
+df_108_first14 <- cosinor_daily_predictions %>%
+  filter(ID == "108") %>%
+  mutate(date = as.Date(datetime)) %>%
+  filter(date %in% sort(unique(date))[1:14])  # keep only first 14 days
+
+# Plot with facets
+ggplot(df_108_first14, aes(x = datetime)) +
+  geom_point(aes(y = `Glucose (mg/dl)`), alpha = 0.4, size = 1.2, color = "blue") +
+  geom_line(aes(y = predicted_glucose), color = "red", size = 1) +
+  labs(
+    title = "Daily Cosinor Fits for ID 108 – First 14 Days",
+    x = "Time of Day",
+    y = "Glucose (mg/dl)"
+  ) +
+  scale_x_datetime(date_labels = "%H:%M", date_breaks = "3 hours") +
+  theme_minimal(base_size = 12)+
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1))
+
+## ID 109
+# Filter for ID 109 and select first 14 dates
+df_109_first14 <- cosinor_daily_predictions %>%
+  filter(ID == "109") %>%
+  mutate(date = as.Date(datetime)) %>%
+  filter(date %in% sort(unique(date))[1:14])  # keep only first 14 days
+
+# Plot with facets
+ggplot(df_109_first14, aes(x = datetime)) +
+  geom_point(aes(y = `Glucose (mg/dl)`), alpha = 0.4, size = 1.2, color = "blue") +
+  geom_line(aes(y = predicted_glucose), color = "red", size = 1) +
+  labs(
+    title = "Daily Cosinor Fits for ID 109 – First 14 Days",
+    x = "Time of Day",
+    y = "Glucose (mg/dl)"
+  ) +
+  scale_x_datetime(date_labels = "%H:%M", date_breaks = "3 hours") +
+  theme_minimal(base_size = 12)+
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1))
+
+## ID 112
+# Filter for ID 112 and select second 14 dates
+df_112_first14 <- cosinor_daily_predictions %>%
+  filter(ID == "112") %>%
+  mutate(date = as.Date(datetime)) %>%
+  filter(date %in% sort(unique(date))[14:28])  # keep only second 14 days
+
+# Plot with facets
+ggplot(df_112_first14, aes(x = datetime)) +
+  geom_point(aes(y = `Glucose (mg/dl)`), alpha = 0.4, size = 1.2, color = "blue") +
+  geom_line(aes(y = predicted_glucose), color = "red", size = 1) +
+  labs(
+    title = "Daily Cosinor Fits for ID 112 – Second 14 Days",
+    x = "Time of Day",
+    y = "Glucose (mg/dl)"
+  ) +
+  scale_x_datetime(date_labels = "%H:%M", date_breaks = "3 hours") +
+  theme_minimal(base_size = 12)+
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
 ### Moving window
+#### Moving Window with cosinor.lm()
 **Description:** Cos for 102: Moving window for 102 
 
 ```{r}
@@ -2079,22 +2407,22 @@ ggplot(moving_window_102, aes(x = Window_Start)) +
    }
    
    # calculate cosinus components
-   dec_time <- window_data_102_l$dec.time
-   window_data_102_l$cos_part <- cos(2 * pi * dec_time / 24)
-   window_data_102_l$sin_part <- sin(2 * pi * dec_time / 24)
+   dec_time_102_l <- window_data_102_l$dec.time
+   window_data_102_l$cos_part <- cos(2 * pi * dec_time_102_l / 24)
+   window_data_102_l$sin_part <- sin(2 * pi * dec_time_102_l / 24)
    
    # fit with linear regression
-   fit_test <- tryCatch({
+   fit_test_102_l <- tryCatch({
      lm(`Glucose (mg/dl)` ~ cos_part + sin_part, data = window_data_102_l)
    }, error = function(e) NA)
    
    # test
-   if (!inherits(fit_test, "lm")) {
+   if (!inherits(fit_test_102_l, "lm")) {
      current_start_102 <- current_start_102 + step_size
      next
    }
    
-   coefs <- coef(fit_test)
+   coefs <- coef(fit_test_102_l)
    
    # skip if NA in relevant coefficents
    if (any(is.na(coefs[c("(Intercept)", "cos_part", "sin_part")]))) {
@@ -2104,14 +2432,14 @@ ggplot(moving_window_102, aes(x = Window_Start)) +
    
    # extract coefficients
    intercept_102_l <- coefs["(Intercept)"]
-   beta_102      <- coefs["cos_part"]
-   gamma_102     <- coefs["sin_part"]
+   beta_102_l      <- coefs["cos_part"]
+   gamma_102_l     <- coefs["sin_part"]
    
    # amolitude
-   amp_102_l <- sqrt(beta_102^2 + gamma_102^2)
+   amp_102_l <- sqrt(beta_102_l^2 + gamma_102_l^2)
    
    # Acrophase (radiant)
-   acr_rad_102_l <- atan2(-gamma_102, beta_102)  # Wichtig: Minuszeichen
+   acr_rad_102_l <- atan2(gamma_102_l, beta_102_l)  # without minus
    
    # Acrophase (hours)
    acrophase_raw_102_l <- (acr_rad_102_l * 24) / (2 * pi)
@@ -2200,7 +2528,7 @@ while (current_start_102 + window_length <= end_time_mv_102) {
   gamma_102   <- coefs["sin_part"]
   
   amp_L      <- sqrt(beta_102^2 + gamma_102^2)
-  acr_L_rad  <- atan2(-gamma_102, beta_102)
+  acr_L_rad  <- atan2(gamma_102, beta_102)
   
   # Cosinor-Paketmodell
   fit_102 <- tryCatch({
@@ -2857,6 +3185,118 @@ ggplot(moving_window_112, aes(x = Window_Start)) +
   theme_minimal(base_size = 12) +
   theme(legend.position = "bottom")
 ```
+#### Moving window with lm()
+```{r}
+library(dplyr)
+library(lubridate)
+
+# Leere Liste für alle IDs
+all_results <- list()
+
+# Alle IDs extrahieren
+ids <- unique(glucose_fit_data$ID)
+
+# Fenster-Parameter
+window_length <- days(3)
+step_size <- days(1)
+
+# Schleife über alle IDs
+for (id in ids) {
+  
+  # Daten für aktuelle ID
+  glucose_id_data <- glucose_fit_data %>%
+    filter(ID == id)
+  
+  # Prüfe, ob genug Daten da sind
+  if (nrow(glucose_id_data) < 400) next
+  
+  # Zeitgrenzen
+  start_time <- min(glucose_id_data$datetime)
+  end_time   <- max(glucose_id_data$datetime)
+  
+  # Starte Sliding Window
+  current_start <- start_time
+  id_results <- list()  # Zwischenspeicher pro ID
+  
+  while (current_start + window_length <= end_time) {
+    
+    current_end <- current_start + window_length
+    
+    # Daten im Fenster
+    window_data <- glucose_id_data %>%
+      filter(datetime >= current_start & datetime < current_end)
+    
+    # Skip bei zu wenigen Datenpunkten
+    if (nrow(window_data) < 400) {
+      current_start <- current_start + step_size
+      next
+    }
+    
+    # Kosinus-Komponenten neu berechnen (zur Sicherheit)
+    dec_time <- window_data$dec.time
+    window_data$cos_part <- cos(2 * pi * dec_time / 24)
+    window_data$sin_part <- sin(2 * pi * dec_time / 24)
+    
+    # Cosinor-Fit
+    fit <- tryCatch({
+      lm(`Glucose (mg/dl)` ~ cos_part + sin_part, data = window_data)
+    }, error = function(e) NA)
+    
+    # Falls Fit nicht funktioniert
+    if (!inherits(fit, "lm")) {
+      current_start <- current_start + step_size
+      next
+    }
+    
+    coefs <- coef(fit)
+    
+    # Falls NA in Koeffizienten
+    if (any(is.na(coefs[c("(Intercept)", "cos_part", "sin_part")]))) {
+      current_start <- current_start + step_size
+      next
+    }
+    
+    # Extrahiere Parameter
+    intercept <- coefs["(Intercept)"]
+    beta      <- coefs["cos_part"]
+    gamma     <- coefs["sin_part"]
+    
+    amp <- sqrt(beta^2 + gamma^2)
+    acr_rad <- atan2(gamma, beta)
+    acrophase_raw <- (acr_rad * 24) / (2 * pi)
+    acrophase_norm <- (acrophase_raw + 24) %% 24
+    max_time <- acrophase_norm
+    min_time <- (acrophase_norm + 12) %% 24
+    
+    # Ergebnisse speichern
+    id_results[[length(id_results) + 1]] <- data.frame(
+      ID = id,
+      Window_Start = current_start,
+      Amp = amp,
+      Acrophase_Rad = acr_rad,
+      Acrophase_Raw = acrophase_raw,
+      Acrophase_Raw_Hours = acrophase_norm,
+      Max_Time_Hours = max_time,
+      Min_Time_Hours = min_time,
+      Intercept = intercept
+    )
+    
+    # Nächstes Fenster
+    current_start <- current_start + step_size
+  }
+  
+  # Ergebnisse der aktuellen ID speichern
+  if (length(id_results) > 0) {
+    all_results[[length(all_results) + 1]] <- do.call(rbind, id_results)
+  }
+}
+
+# Kombiniere alle Ergebnisse in ein DataFrame
+moving_window_all_ids <- do.call(rbind, all_results)
+
+# Optional: Ergebnisse ansehen
+head(moving_window_all_ids)
+```
 ### Seasonal Cosinus Fit: Means
 **Description:** Define Seasons
 ```{r}
@@ -3044,6 +3484,7 @@ amplitude_means_112 <- moving_window_112 %>%
          y = "Mean Intercept") +
     theme(plot.title = element_text(hjust = 0.5))
 ```
+
 ### Seasonal Cosinus Fit: Raw Data
 **Description:** Bind Data Sets
 ```{r}
@@ -3281,6 +3722,162 @@ ggplot() +
   )
 ```
 
+
+## Trouble Shooting: Cosine Fit
+```{r}
+# 1. Zeitreihe erzeugen
+datetime <- seq(
+  from = as.POSIXct("2025-01-01 00:00:00"),
+  to = as.POSIXct("2025-01-07 23:30:00"),
+  by = "30 min"
+)
+
+# 2. Dezimalzeit für 24h-Periode
+dec.time <- as.numeric(format(datetime, "%H")) + as.numeric(format(datetime, "%M")) / 60
+
+# 3. Cosinus mit 24h-Periode, Maximum um 18 Uhr
+mesor <- 100
+amplitude <- 20
+phase_shift <- pi/2  # Maximum bei 18 Uhr
+
+glucose <- mesor + amplitude * cos(2 * pi * dec.time / 24 + phase_shift)
+
+# 4. In DataFrame
+synthetic_24h <- data.frame(datetime, dec.time, glucose)
+
+# 5. Plot
+ggplot(synthetic_24h, aes(x = datetime, y = glucose)) +
+  geom_line(color = "darkorange3") +
+  labs(
+    title = "Synthetische Glukosekurve (Min bei 6 Uhr, Max bei 18 Uhr)",
+    y = "Glukose", x = "Zeit"
+  ) +
+  theme_minimal()
+
+
+
+# 5. Cosinor-Komponenten
+synthetic_24h <- synthetic_24h %>%
+  mutate(
+    cos_part = cos(2 * pi * dec.time / 24),
+    sin_part = sin(2 * pi * dec.time / 24)
+  )
+
+
+
+### ----- Manueller lm-Fit -----
+fit_lm <- lm(glucose ~ cos_part + sin_part, data = synthetic_24h)
+coefs_lm <- coef(fit_lm)
+
+intercept_l <- coefs_lm["(Intercept)"]
+beta <- coefs_lm["cos_part"]
+gamma <- coefs_lm["sin_part"]
+
+amp_l <- sqrt(beta^2 + gamma^2)
+acr_rad_l <- atan2(gamma, beta) # HIER: normalerweise atan2(-gamma, beta), wenn man das minus rausnimmt, macht der Output Sinn
+acr_hr_l <- (acr_rad_l * 24 / (2 * pi)) %% 24
+max_time_l <- acr_hr_l
+min_time_l <- (acr_hr_l + 12) %% 24
+
+### ----- cosinor.lm-Fit -----
+fit_cos <- cosinor.lm(glucose ~ time(dec.time), data = synthetic_24h, period = 24)
+coefs_cos <- coef(fit_cos, transformed = TRUE)
+
+intercept_cos   <- coefs_cos["(Intercept)"]
+amp_cos         <- coefs_cos["amp"]
+acr_rad_cos <- coefs_cos["acr"]
+acr_hr_cos <- (acr_rad_cos * 24) / (2 * pi)
+max_time_cos    <- acr_hr_cos %% 24
+min_time_cos    <- (acr_hr_cos + 12) %% 24
+
+
+### ----- Zusammenfassung in DataFrame -----
+summary_df <- data.frame(
+  Window_Start      = as.POSIXct("2025-01-01 00:00:00"),
+  
+  # manuelles Modell
+  Intercept_lm      = intercept_l,
+  Amp_lm            = amp_l,
+  Acrophase_Rad_lm  = acr_rad_l,
+  Acrophase_Hours_lm= acr_hr_l,
+  MaxTime_Hours_lm  = max_time_l,
+  MinTime_Hours_lm  = min_time_l,
+  
+  # cosinor.lm Modell
+  Intercept_cos     = intercept_cos,
+  Amp_cos           = amp_cos,
+  Acrophase_Rad_cos = acr_rad_cos,
+  Acrophase_Hours_cos = acr_hr_cos,
+  MaxTime_Hours_cos = max_time_cos,
+  MinTime_Hours_cos = min_time_cos
+)
+
+######################## das ganze für den Datensatz der ID 102 ausprobieren
+
+# Daten für Patient ID 102 vorbereiten
+glucose_fit_102_data <- cleaned_data_deduplicated %>%
+  filter(ID == "102") %>% 
+  mutate(
+    datetime = dmy_hm(DeviceTimestamp), 
+    dec.time = hour(datetime) + minute(datetime) / 60
+  )
+
+# 5. Cosinor-Komponenten
+glucose_fit_102_data <- glucose_fit_102_data %>%
+  mutate(
+    cos_part = cos(2 * pi * dec.time / 24),
+    sin_part = sin(2 * pi * dec.time / 24)
+  )
+
+### ----- Manueller lm-Fit -----
+fit_lm <- lm(`Glucose (mg/dl)` ~ cos_part + sin_part, data = glucose_fit_102_data)
+coefs_lm <- coef(fit_lm)
+
+intercept_l <- coefs_lm["(Intercept)"]
+beta <- coefs_lm["cos_part"]
+gamma <- coefs_lm["sin_part"]
+
+amp_l <- sqrt(beta^2 + gamma^2)
+acr_rad_l <- atan2(gamma, beta) # HIER: normalerweise atan2(-gamma, beta)
+acr_hr_l <- (acr_rad_l * 24 / (2 * pi)) %% 24
+max_time_l <- acr_hr_l
+min_time_l <- (acr_hr_l + 12) %% 24
+
+### ----- cosinor.lm-Fit -----
+fit_cos <- cosinor.lm(`Glucose (mg/dl)` ~ time(dec.time), data = glucose_fit_102_data, period = 24)
+coefs_cos <- coef(fit_cos, transformed = TRUE)
+
+intercept_cos <- coefs_cos["(Intercept)"]
+amp_cos <- coefs_cos["amp"]
+acr_rad_cos <- coefs_cos["acr"]
+acr_hr_cos <- (acr_rad_cos * 24 / (2 * pi)) %% 24  # Konsistent: %% 24 hier anwenden
+max_time_cos <- acr_hr_cos
+min_time_cos <- (acr_hr_cos + 12) %% 24
+
+### ----- Zusammenfassung in DataFrame -----
+summary_df_102 <- data.frame(
+  Patient_ID = "102",
+  Window_Start = min(glucose_fit_102_data$datetime, na.rm = TRUE),
+  Window_End = max(glucose_fit_102_data$datetime, na.rm = TRUE),
+  N_Observations = nrow(glucose_fit_102_data),
+  
+  # manuelles Modell
+  Intercept_lm = intercept_l,
+  Amp_lm = amp_l,
+  Acrophase_Rad_lm = acr_rad_l,
+  Acrophase_Hours_lm = acr_hr_l,
+  MaxTime_Hours_lm = max_time_l,
+  MinTime_Hours_lm = min_time_l,
+  
+  # cosinor.lm Modell
+  Intercept_cos = intercept_cos,
+  Amp_cos = amp_cos,
+  Acrophase_Rad_cos = acr_rad_cos,
+  Acrophase_Hours_cos = acr_hr_cos,
+  MaxTime_Hours_cos = max_time_cos,
+  MinTime_Hours_cos = min_time_cos
+)
+```
 
 
 
