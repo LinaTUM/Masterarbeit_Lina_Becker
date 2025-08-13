@@ -1203,7 +1203,7 @@ ggplot(cleaned_data_deduplicated, aes(x = Timestamp, y = `Glucose (mg/dl)`, colo
 # Filter for night data
 night_data <- cleaned_data_deduplicated %>%
   mutate(Hour = hour(Timestamp)) %>%
-  filter(Hour >= 22 | Hour < 7) %>%  # Nighttime: 22 to 6
+  filter(Hour >= 22 | Hour < 7) %>%  # Nighttime: 22 to 6:59
   
   # Create reordered factor for plotting (22 to 6)
   mutate(Hour_Factor = factor(Hour, levels = c(22, 23, 0, 1, 2, 3, 4, 5, 6)))
@@ -1223,7 +1223,7 @@ ggplot(night_avg, aes(x = Hour_Factor, y = Avg_Glucose, group = ID, color = ID))
   geom_point(size = 1.5) +
   labs(
     title = "Nighttime Glucose Trends per ID",
-    subtitle = "Hours from 22:00 to 06:00: hourly bins",
+    subtitle = "Hours from 22:00 to 06:59: hourly bins",
     x = "Hour of Night",
     y = "Average Glucose (mg/dl)",
     color = "ID"
@@ -1238,12 +1238,12 @@ ggplot(night_avg, aes(x = Hour_Factor, y = Avg_Glucose, group = ID, color = ID))
 ```{r}
 #boxplot
 ggplot(night_data, aes(x = Hour_Factor, y = `Glucose (mg/dl)`, fill = Hour_Factor)) +
-  geom_boxplot(outlier.shape = NA, alpha = 0.6) +
+  geom_boxplot(outlier.size = 0.2, alpha = 0.6) +
   facet_wrap(~ ID, ncol = 2) +
   scale_fill_brewer(palette = "Blues") +
   labs(
     title = "Nighttime Glucose Distribution per Hour and ID",
-    subtitle = "Hours from 22:00 to 06:00",
+    subtitle = "Hours from 22:00 to 06:59",
     x = "Hour of Night",
     y = "Glucose (mg/dl)",
     fill = "Hour"
@@ -1383,7 +1383,7 @@ ggplot(double_avg, aes(x = Hour_Factor, y = Avg_Glucose, group = ID, color = ID)
     strip.text = element_text(face = "bold")
   )
 ```
-## Cosinus fit
+## Cosine fit
 ### First fit for every ID
 ```{r}
 # Filter data for ID 102
@@ -1551,9 +1551,9 @@ library(ggplot2)
 ggplot_cosinor.lm(fit, x_str = "X")
 ```
 
-**Description**: fit cosinor for Ecosleep 102
+**Description**: fit cosinor for ID 102
 ```{r}
-# create dataset for cosinor model for 102Ecosleep
+# create dataset for cosinor model for 102
 glucose_fit_102_data <- cleaned_data_deduplicated %>%
   filter(ID == "102") %>%    # filter for 102
   mutate(
@@ -1689,7 +1689,8 @@ summary(predict(glucose_fit_112))
 # plot the fit
 ggplot_cosinor.lm(glucose_fit_112)
 ```
-### Manual Consinus fit but with datasets prepared for fit with cosinor() function (-> no hourly bins but all datapoints)
+### Manual Cosine fit 
+with datasets prepared for fit with cosinor() function (-> no hourly bins but all datapoints)
 **Description**: Fit for 102
 ```{r}
 cos_fit_102_orig <- nls(
@@ -1869,6 +1870,161 @@ summary(cos_fit_109_orig)
 summary(cos_fit_112)
 summary(glucose_fit_112)
 summary(cos_fit_112_orig)
+```
+### Trouble Shooting: Cosine Fit
+```{r}
+# 1. Zeitreihe erzeugen
+datetime <- seq(
+  from = as.POSIXct("2025-01-01 00:00:00"),
+  to = as.POSIXct("2025-01-07 23:30:00"),
+  by = "30 min"
+)
+
+# 2. Dezimalzeit für 24h-Periode
+dec.time <- as.numeric(format(datetime, "%H")) + as.numeric(format(datetime, "%M")) / 60
+
+# 3. Cosinus mit 24h-Periode, Maximum um 18 Uhr
+mesor <- 100
+amplitude <- 20
+phase_shift <- pi/2  # Maximum bei 18 Uhr
+
+glucose <- mesor + amplitude * cos(2 * pi * dec.time / 24 + phase_shift)
+
+# 4. In DataFrame
+synthetic_24h <- data.frame(datetime, dec.time, glucose)
+
+# 5. Plot
+ggplot(synthetic_24h, aes(x = datetime, y = glucose)) +
+  geom_line(color = "darkorange3") +
+  labs(
+    title = "Synthetische Glukosekurve (Min bei 6 Uhr, Max bei 18 Uhr)",
+    y = "Glukose", x = "Zeit"
+  ) +
+  theme_minimal()
+
+
+
+# 5. Cosinor-Komponenten
+synthetic_24h <- synthetic_24h %>%
+  mutate(
+    cos_part = cos(2 * pi * dec.time / 24),
+    sin_part = sin(2 * pi * dec.time / 24)
+  )
+
+
+
+### ----- Manueller lm-Fit -----
+fit_lm <- lm(glucose ~ cos_part + sin_part, data = synthetic_24h)
+coefs_lm <- coef(fit_lm)
+
+intercept_l <- coefs_lm["(Intercept)"]
+beta <- coefs_lm["cos_part"]
+gamma <- coefs_lm["sin_part"]
+
+amp_l <- sqrt(beta^2 + gamma^2)
+acr_rad_l <- atan2(gamma, beta) # HIER: normalerweise atan2(-gamma, beta), wenn man das minus rausnimmt, macht der Output Sinn
+acr_hr_l <- (acr_rad_l * 24 / (2 * pi)) %% 24
+max_time_l <- acr_hr_l
+min_time_l <- (acr_hr_l + 12) %% 24
+
+### ----- cosinor.lm-Fit -----
+fit_cos <- cosinor.lm(glucose ~ time(dec.time), data = synthetic_24h, period = 24)
+coefs_cos <- coef(fit_cos, transformed = TRUE)
+
+intercept_cos   <- coefs_cos["(Intercept)"]
+amp_cos         <- coefs_cos["amp"]
+acr_rad_cos <- coefs_cos["acr"]
+acr_hr_cos <- (acr_rad_cos * 24) / (2 * pi)
+max_time_cos    <- acr_hr_cos %% 24
+min_time_cos    <- (acr_hr_cos + 12) %% 24
+
+
+### ----- Zusammenfassung in DataFrame -----
+summary_df <- data.frame(
+  Window_Start      = as.POSIXct("2025-01-01 00:00:00"),
+  
+  # manuelles Modell
+  Intercept_lm      = intercept_l,
+  Amp_lm            = amp_l,
+  Acrophase_Rad_lm  = acr_rad_l,
+  Acrophase_Hours_lm= acr_hr_l,
+  MaxTime_Hours_lm  = max_time_l,
+  MinTime_Hours_lm  = min_time_l,
+  
+  # cosinor.lm Modell
+  Intercept_cos     = intercept_cos,
+  Amp_cos           = amp_cos,
+  Acrophase_Rad_cos = acr_rad_cos,
+  Acrophase_Hours_cos = acr_hr_cos,
+  MaxTime_Hours_cos = max_time_cos,
+  MinTime_Hours_cos = min_time_cos
+)
+
+######################## das ganze für den Datensatz der ID 102 ausprobieren
+
+# Daten für Patient ID 102 vorbereiten
+glucose_fit_102_data <- cleaned_data_deduplicated %>%
+  filter(ID == "102") %>% 
+  mutate(
+    datetime = dmy_hm(DeviceTimestamp), 
+    dec.time = hour(datetime) + minute(datetime) / 60
+  )
+
+# 5. Cosinor-Komponenten
+glucose_fit_102_data <- glucose_fit_102_data %>%
+  mutate(
+    cos_part = cos(2 * pi * dec.time / 24),
+    sin_part = sin(2 * pi * dec.time / 24)
+  )
+
+### ----- Manueller lm-Fit -----
+fit_lm <- lm(`Glucose (mg/dl)` ~ cos_part + sin_part, data = glucose_fit_102_data)
+coefs_lm <- coef(fit_lm)
+
+intercept_l <- coefs_lm["(Intercept)"]
+beta <- coefs_lm["cos_part"]
+gamma <- coefs_lm["sin_part"]
+
+amp_l <- sqrt(beta^2 + gamma^2)
+acr_rad_l <- atan2(gamma, beta) # HIER: normalerweise atan2(-gamma, beta)
+acr_hr_l <- (acr_rad_l * 24 / (2 * pi)) %% 24
+max_time_l <- acr_hr_l
+min_time_l <- (acr_hr_l + 12) %% 24
+
+### ----- cosinor.lm-Fit -----
+fit_cos <- cosinor.lm(`Glucose (mg/dl)` ~ time(dec.time), data = glucose_fit_102_data, period = 24)
+coefs_cos <- coef(fit_cos, transformed = TRUE)
+
+intercept_cos <- coefs_cos["(Intercept)"]
+amp_cos <- coefs_cos["amp"]
+acr_rad_cos <- coefs_cos["acr"]
+acr_hr_cos <- (acr_rad_cos * 24 / (2 * pi)) %% 24  # Konsistent: %% 24 hier anwenden
+max_time_cos <- acr_hr_cos
+min_time_cos <- (acr_hr_cos + 12) %% 24
+
+### ----- Zusammenfassung in DataFrame -----
+summary_df_102 <- data.frame(
+  Patient_ID = "102",
+  Window_Start = min(glucose_fit_102_data$datetime, na.rm = TRUE),
+  Window_End = max(glucose_fit_102_data$datetime, na.rm = TRUE),
+  N_Observations = nrow(glucose_fit_102_data),
+  
+  # manuelles Modell
+  Intercept_lm = intercept_l,
+  Amp_lm = amp_l,
+  Acrophase_Rad_lm = acr_rad_l,
+  Acrophase_Hours_lm = acr_hr_l,
+  MaxTime_Hours_lm = max_time_l,
+  MinTime_Hours_lm = min_time_l,
+  
+  # cosinor.lm Modell
+  Intercept_cos = intercept_cos,
+  Amp_cos = amp_cos,
+  Acrophase_Rad_cos = acr_rad_cos,
+  Acrophase_Hours_cos = acr_hr_cos,
+  MaxTime_Hours_cos = max_time_cos,
+  MinTime_Hours_cos = min_time_cos
+)
 ```
 ### Cosine fit with lm()
 **Description:** Fit over whole dataset
@@ -2053,7 +2209,7 @@ ggplot(df_104_first14, aes(x = datetime)) +
     axis.text.x = element_text(angle = 45, hjust = 1))
 
 ## ID 107
-# Filter for ID 102 and select first 14 dates
+# Filter for ID 107 and select first 14 dates
 df_107_first14 <- cosinor_daily_predictions %>%
   filter(ID == "107") %>%
   mutate(date = as.Date(datetime)) %>%
@@ -2074,7 +2230,7 @@ ggplot(df_107_first14, aes(x = datetime)) +
     axis.text.x = element_text(angle = 45, hjust = 1))
 
 ## ID 108
-# Filter for ID 102 and select first 14 dates
+# Filter for ID 108 and select first 14 dates
 df_108_first14 <- cosinor_daily_predictions %>%
   filter(ID == "108") %>%
   mutate(date = as.Date(datetime)) %>%
@@ -2120,7 +2276,7 @@ ggplot(df_109_first14, aes(x = datetime)) +
 df_112_first14 <- cosinor_daily_predictions %>%
   filter(ID == "112") %>%
   mutate(date = as.Date(datetime)) %>%
-  filter(date %in% sort(unique(date))[14:28])  # keep only second 14 days
+  filter(date %in% sort(unique(date))[15:28])  # keep only second 14 days
 
 # Plot with facets
 ggplot(df_112_first14, aes(x = datetime)) +
@@ -2137,6 +2293,7 @@ ggplot(df_112_first14, aes(x = datetime)) +
     axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
+
 ### Moving window
 #### Moving Window with cosinor.lm()
 **Description:** Cos for 102: Moving window for 102 
@@ -3232,7 +3389,7 @@ for (id in ids) {
       next
     }
     
-    # Kosinus-Komponenten neu berechnen (zur Sicherheit)
+    # Calculate cosine components
     dec_time <- window_data$dec.time
     window_data$cos_part <- cos(2 * pi * dec_time / 24)
     window_data$sin_part <- sin(2 * pi * dec_time / 24)
@@ -3297,7 +3454,7 @@ moving_window_all_ids <- do.call(rbind, all_results)
 # Optional: Ergebnisse ansehen
 head(moving_window_all_ids)
 ```
-### Seasonal Cosinus Fit: Means
+## Seasonal Analysis
 **Description:** Define Seasons
 ```{r}
   
@@ -3319,189 +3476,23 @@ seasons <- function(date) {
 moving_window_all_ids <- moving_window_all_ids %>%
   mutate(Season = sapply(Window_Start, seasons))
 ```
-**Description:** Add Seasons to Moving Window Data Frames (NOT NEEDED)
-```{r}
-moving_window_102 <- moving_window_102 %>%
-  mutate(Season = sapply(Window_Start, seasons))
-
-moving_window_104 <- moving_window_104 %>%
-  mutate(Season = sapply(Window_Start, seasons))
-
-moving_window_107 <- moving_window_107 %>%
-  mutate(Season = sapply(Window_Start, seasons))
-
-moving_window_108 <- moving_window_108 %>%
-  mutate(Season = sapply(Window_Start, seasons))
-
-moving_window_109 <- moving_window_109 %>%
-  mutate(Season = sapply(Window_Start, seasons))
-
-moving_window_112 <- moving_window_112 %>%
-  mutate(Season = sapply(Window_Start, seasons))
-```
-**Description:** Calculate Amplitude, Acrophase and Intercept Means per Season (NOT NEEDED)
-```{r}
- amplitude_means_102 <- moving_window_102 %>%
-    group_by(Season) %>%
-    summarise(
-      mean_amp = mean(Amp, na.rm = TRUE),
-      sd_amp = sd(Amp, na.rm = TRUE),
-      mean_int = mean(Intercept, na.rm = TRUE),
-      sd_int = sd(Intercept, na.rm = TRUE),
-      mean_acr = mean(Acrophase_Raw_Hours, na.rm = TRUE),
-      sd_acr = sd(Acrophase_Raw_Hours, na.rm = TRUE),
-      n = n()
-    )
-
-amplitude_means_104 <- moving_window_104 %>%
-    group_by(Season) %>%
-    summarise(
-      mean_amp = mean(Amp, na.rm = TRUE),
-      sd_amp = sd(Amp, na.rm = TRUE),
-       mean_int = mean(Intercept, na.rm = TRUE),
-      sd_int = sd(Intercept, na.rm = TRUE),
-      mean_acr = mean(Acrophase_Raw_Hours, na.rm = TRUE),
-      sd_acr = sd(Acrophase_Raw_Hours, na.rm = TRUE),
-      n = n()
-    )
-
-amplitude_means_107 <- moving_window_107 %>%
-    group_by(Season) %>%
-    summarise(
-      mean_amp = mean(Amp, na.rm = TRUE),
-      sd_amp = sd(Amp, na.rm = TRUE),
-      mean_int = mean(Intercept, na.rm = TRUE),
-      sd_int = sd(Intercept, na.rm = TRUE),
-      mean_acr = mean(Acrophase_Raw_Hours, na.rm = TRUE),
-      sd_acr = sd(Acrophase_Raw_Hours, na.rm = TRUE),
-      n = n()
-    )
-
-amplitude_means_108 <- moving_window_108 %>%
-    group_by(Season) %>%
-    summarise(
-      mean_amp = mean(Amp, na.rm = TRUE),
-      sd_amp = sd(Amp, na.rm = TRUE),
-      mean_int = mean(Intercept, na.rm = TRUE),
-      sd_int = sd(Intercept, na.rm = TRUE),
-      mean_acr = mean(Acrophase_Raw_Hours, na.rm = TRUE),
-      sd_acr = sd(Acrophase_Raw_Hours, na.rm = TRUE),
-      n = n()
-    )
-
-amplitude_means_109 <- moving_window_109 %>%
-    group_by(Season) %>%
-    summarise(
-      mean_amp = mean(Amp, na.rm = TRUE),
-      sd_amp = sd(Amp, na.rm = TRUE),
-      mean_int = mean(Intercept, na.rm = TRUE),
-      sd_int = sd(Intercept, na.rm = TRUE),
-      mean_acr = mean(Acrophase_Raw_Hours, na.rm = TRUE),
-      sd_acr = sd(Acrophase_Raw_Hours, na.rm = TRUE),
-      n = n()
-    )
-
-amplitude_means_112 <- moving_window_112 %>%
-    group_by(Season) %>%
-    summarise(
-      mean_amp = mean(Amp, na.rm = TRUE),
-      sd_amp = sd(Amp, na.rm = TRUE),
-      mean_int = mean(Intercept, na.rm = TRUE),
-      sd_int = sd(Intercept, na.rm = TRUE),
-      mean_acr = mean(Acrophase_Raw_Hours, na.rm = TRUE),
-      sd_acr = sd(Acrophase_Raw_Hours, na.rm = TRUE),
-      n = n()
-    )
-``` 
-**Description:** Merge Data Sets (NOT NEEDED)
-```{r}
-  # Add identifier columns and bind all together
-  means_cos_fit <- bind_rows(
-    amplitude_means_102 %>% mutate(ID = "102"),
-    amplitude_means_104 %>% mutate(ID = "104"),
-    amplitude_means_107 %>% mutate(ID = "107"),
-    amplitude_means_108 %>% mutate(ID = "108"),
-    amplitude_means_109 %>% mutate(ID = "109"),
-    amplitude_means_112 %>% mutate(ID = "112")
-  )
-```
 #### Acrophase: Linear Mixed Effects Model
 **Description:** Install and Load Packages 
 ```{r}
   library(lme4)
   library(lmerTest)
 ```
-**Description:** Apply Linear Mixed Effects Model (NOT NEEDED)
-```{r}
-  # Model: Mean amplitude by Season with random intercept for ID
-  model_acr <- lmer(mean_acr ~ Season + (1 | ID), data = means_cos_fit)
-  
-  # Summary with fixed effect estimates and significance
-  summary(model_acr)
-```  
-**Description:** Plot
-```{r}
-  ggplot(means_cos_fit, aes(x = Season, y = mean_acr)) +
-    geom_boxplot(fill = "lightblue", alpha = 0.6) +
-    geom_jitter(width = 0.2, alpha = 0.5, color = "black") +
-    theme_minimal() +
-    labs(title = "Mean Acrophase by Season",
-         x = "Season",
-         y = "Mean Acrophase") +
-    theme(plot.title = element_text(hjust = 0.5))
-```
-#### Amplitude: Linear Mixed Effects Model (NOT NEEDED)
-**Description:** Apply Linear Mixed Effects Model (NOT NEEDED)
-```{r}
-  # Model: Mean amplitude by Season with random intercept for ID
-  model_amp <- lmer(mean_amp ~ Season + (1 | ID), data = means_cos_fit)
-  
-  # Summary with fixed effect estimates and significance
-  summary(model_amp)
-```  
-**Description:** Plot (NOT NEEDED)
-```{r}
-  ggplot(means_cos_fit, aes(x = Season, y = mean_amp)) +
-    geom_boxplot(fill = "lightblue", alpha = 0.6) +
-    geom_jitter(width = 0.2, alpha = 0.5, color = "black") +
-    theme_minimal() +
-    labs(title = "Mean Amplitude by Season",
-         x = "Season",
-         y = "Mean Amplitude") +
-    theme(plot.title = element_text(hjust = 0.5))
-```  
-#### Intercept: Linear Mixed Effects Model
-**Description:** Apply Linear Mixed Effects Model (NOT NEEDED)
-```{r}
-  # Model: Mean intercept by Season with random intercept for ID
-  model_int <- lmer(mean_int ~ Season + (1 | ID), data = means_cos_fit)
-  
-  # Summary with fixed effect estimates and significance
-  summary(model_int)
-```  
-**Description:** Plot (NOT NEEDED)
-```{r}
-  ggplot(means_cos_fit, aes(x = Season, y = mean_int)) +
-    geom_boxplot(fill = "lightblue", alpha = 0.6) +
-    geom_jitter(width = 0.2, alpha = 0.5, color = "black") +
-    theme_minimal() +
-    labs(title = "Mean Intercept by Season",
-         x = "Season",
-         y = "Mean Intercept") +
-    theme(plot.title = element_text(hjust = 0.5))
-```
-#### Acrophase: Linear Mixed Effects Model
 **Description:** Apply Linear Mixed Effects Model
 ```{r}
-# Setze Winter als Referenzlevel
+# Set winter as reference level
 moving_window_all_ids$Season <- relevel(factor(moving_window_all_ids$Season), ref = "Winter")
 ``` 
 
 ```{r}
-# Fit das Modell neu
+# Fit the model
 model_acr_season <- lmer(Acrophase_Raw_Hours ~ Season + (1 | ID), data = moving_window_all_ids)
 
-# Ausgabe der Ergebnisse
+# Show results
 summary(model_acr_season)
 
  ggplot(moving_window_all_ids, aes(x = Season, y = Acrophase_Raw_Hours)) +
@@ -3568,77 +3559,7 @@ ggplot(moving_window_all_ids, aes(x = Season, y = Intercept)) +
 ```
 
 ### Polar Plots 
-#### Polar Plot for Max and Min for ID 102
-**Description:** Code for Polar Plot (ID 102) (NOT NEEDED)
-```{r}
- # 1. Umrechnung der Zeiten in Radianten (0 bis 2pi)
-  moving_window_102 <- moving_window_102 %>%
-    mutate(
-      Min_Rad = (Min_Time_Hours / 24) * 2 * pi,
-      Max_Rad = (Max_Time_Hours / 24) * 2 * pi
-    )
-  
-  # 2. Durchschnittliche Min und Max (Mittelwerte)
-  avg_min_rad <- mean(moving_window_102$Min_Rad)
-  avg_max_rad <- mean(moving_window_102$Max_Rad)
-  
-  # 3. Schwankungsbereich (z.B. +/- 1 Standardabweichung)
-  min_lower <- avg_min_rad - sd(moving_window_102$Min_Rad)
-  min_upper <- avg_min_rad + sd(moving_window_102$Min_Rad)
-  
-  max_lower <- avg_max_rad - sd(moving_window_102$Max_Rad)
-  max_upper <- avg_max_rad + sd(moving_window_102$Max_Rad)
-  
- 
-  
-  # 5. Pointer (Zeiger) mit Radius 0 bis 1 am Mittelwert-Winkel
-  pointers <- data.frame(
-    angle = c(avg_min_rad, avg_max_rad),
-    label = c("Avg Min", "Avg Max"),
-    color = c("blue", "red")
-  )
-```
-**Description:** Standard Deviation (NOT NEEDED)
-```{r}
- # Rechteck um Avg Max (±1 SD im Winkel, Radius von 0.95 bis 1)
-  max_rect <- data.frame(
-    xmin = max_lower,
-    xmax = max_upper,
-    ymin = 0.95,
-    ymax = 1
-  )
-``` 
-**Description:** Create Polar Plot for 102 (NOT NEEDED)
-```{r}
-  ggplot() +
-    # Rechteck als Unsicherheitsbereich um Max
-    geom_rect(data = max_rect,
-              aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
-              fill = "pink", alpha = 0.3) +
-    
-    # Zeiger
-    geom_segment(data = pointers,
-                 aes(x = angle, xend = angle, y = 0, yend = 1, color = label),
-                 linewidth = 1.5) +
-    
-    coord_polar(start = 0) +  # 0 Uhr oben
-    scale_x_continuous(
-      breaks = seq(0, 2*pi, length.out = 25),
-      labels = 0:24,
-      limits = c(0, 2*pi)
-    ) +
-    scale_y_continuous(limits = c(0, 1)) +
-    scale_color_manual(values = c("Avg Min" = "blue", "Avg Max" = "pink")) +
-    labs(title = "Polarplot mit Standardabweichungs-Bereich um Max-Zeit") +
-    theme_minimal() +
-    theme(
-      axis.title.y = element_blank(),
-      panel.grid.major = element_line(color = "grey80"),
-      panel.grid.minor = element_blank(),
-      legend.position = "bottom"
-    )
-```
-#### Polar Plot for Max for all IDs
+#### Polar Plot for Acrophase for all IDs
 ```{r}
 # Rad-Winkel berechnen
   moving_window_all_ids <- moving_window_all_ids %>%
@@ -3689,80 +3610,7 @@ ggplot(moving_window_all_ids, aes(x = Season, y = Intercept)) +
               alpha = 0.3) +
     geom_segment(data = all_pointers,
                  aes(x = angle, xend = angle, y = 0, yend = 1, color = ID),
-                 linewidth = 0.7) +
-    coord_polar(start = 0) +
-    scale_x_continuous(
-    breaks = seq(0, 2 * pi * 23/24, length.out = 24),
-    labels = 0:23,
-    limits = c(0, 2 * pi)) +
-    scale_y_continuous(limits = c(0, 1), labels = NULL) +
-    labs(
-      title = "Acrophase + SD for all IDs",
-      x = "Time of Day",
-      y = NULL,
-      color = "Pointer",
-      fill = "Standard Deviation"
-    ) +
-    theme_minimal() +
-    theme(
-      axis.title.y = element_blank(),
-      panel.grid.major = element_line(color = "grey80"),
-      panel.grid.minor = element_blank(),
-      legend.position = "bottom"
-    )
-```
-
-```{r}
-# Rad-Winkel berechnen
-  moving_window_data <- moving_window_data %>%
-    mutate(Max_Rad = (Max_Time_Hours / 24) * 2 * pi)
-  
-  # Initialize Data Frames for Pointer and SD-Rectangles
-  all_pointers <- data.frame()
-  all_rects <- data.frame()
-  
-  # Loop for all IDs
-  for (id in id_list) {
-    df_id <- moving_window_data %>% filter(ID == id)
-    
-    avg_max <- mean(df_id$Max_Rad, na.rm = TRUE)
-    sd_max <- sd(df_id$Max_Rad, na.rm = TRUE)
-    
-    rect_ymin <- 1 - 0.05 * (which(id_list == id))  
-    rect_ymax <- rect_ymin + 0.05
-    
-    all_pointers <- bind_rows(all_pointers, data.frame(
-      angle = avg_max,
-      label = paste0("Avg Max ", id)
-    ))
-    
-    all_rects <- bind_rows(all_rects, data.frame(
-      xmin = avg_max - sd_max,
-      xmax = avg_max + sd_max,
-      ymin = rect_ymin,
-      ymax = rect_ymax,
-      label = paste0("Avg Max ", id)
-    ))
-  }
-  
- # Add IDs to data frames 
-  library(stringr)
-  
-  all_pointers <- all_pointers %>%
-    mutate(ID = str_extract(label, "\\d+"))
-  
-  all_rects <- all_rects %>%
-    mutate(ID = str_extract(label, "\\d+"))
-  
-  
-  # Plot
-  ggplot() +
-    geom_rect(data = all_rects,
-              aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = ID),
-              alpha = 0.3) +
-    geom_segment(data = all_pointers,
-                 aes(x = angle, xend = angle, y = 0, yend = 1, color = ID),
-                 linewidth = 1.2) +
+                 linewidth = 0.6) +
     coord_polar(start = 0) +
     scale_x_continuous(
     breaks = seq(0, 2 * pi * 23/24, length.out = 24),
@@ -3825,7 +3673,7 @@ ggplot() +
             alpha = 0.3, color = NA) +
   geom_segment(data = pointers_seasons,
                aes(x = angle, xend = angle, y = 0, yend = 1, color = ID),
-               linewidth = 1.2) +
+               linewidth = 0.6) +
   coord_polar(start = 0) +
   scale_x_continuous(
     breaks = seq(0, 2 * pi * 23/24, length.out = 24),
@@ -3849,7 +3697,7 @@ ggplot() +
     legend.position = "bottom"
   )
 ```
-###Photoperiod Analysis
+## Photoperiod Analysis
 ```{r}
 if (!requireNamespace("LightLogR", quietly = TRUE)) {
   install.packages("LightLogR")
@@ -3889,29 +3737,30 @@ moving_window_all_ids <- add_photoperiod(
 moving_window_all_ids <- moving_window_all_ids %>%
   mutate(photoperiod_hours = as.numeric(photoperiod, units = "hours"))
 ```
+### Acrophase: Linear Mixed Model
 **Description:** Linear Mixed Model
 ```{r}
 library(lme4)
 
-model_photoperiod <- lmer(
+model_photoperiod_acr <- lmer(
   Acrophase_Raw_Hours ~ photoperiod_hours + (1 | ID),
   data = moving_window_all_ids
 )
 
-summary(model_photoperiod)
+summary(model_photoperiod_acr)
 ``` 
 **Description:** Create a Graph
 ```{r}
 library(ggeffects)
 
 # Get predictions
-pred_data <- ggpredict(model_photoperiod, terms = "photoperiod_hours")
+pred_phot_acr <- ggpredict(model_photoperiod_acr, terms = "photoperiod_hours")
 
 # Plot
 ggplot(moving_window_all_ids, aes(x = photoperiod_hours, y = Acrophase_Raw_Hours)) +
   geom_point(alpha = 0.4, color = "blue") +
-  geom_line(data = pred_data, aes(x = x, y = predicted), color = "red", size = 1) +
-  geom_ribbon(data = pred_data, aes(x = x, ymin = conf.low, ymax = conf.high),
+  geom_line(data = pred_phot_acr, aes(x = x, y = predicted), color = "red", size = 1) +
+  geom_ribbon(data = pred_phot_acr, aes(x = x, ymin = conf.low, ymax = conf.high),
               inherit.aes = FALSE, fill = "pink", alpha = 0.3) +
   theme_minimal() +
   labs(
@@ -3924,7 +3773,7 @@ ggplot(moving_window_all_ids, aes(x = photoperiod_hours, y = Acrophase_Raw_Hours
 **Description:** Create this graph but with models for every ID
 ```{r}
 # Get fitted values for each ID
-id_fits <- moving_window_all_ids %>%
+id_fits_phot_acr <- moving_window_all_ids %>%
   group_by(ID) %>%
   do({
     model_id <- lm(Acrophase_Raw_Hours ~ photoperiod_hours, data = .)
@@ -3940,9 +3789,9 @@ id_fits <- moving_window_all_ids %>%
 # Plot
 ggplot(moving_window_all_ids, aes(x = photoperiod_hours, y = Acrophase_Raw_Hours, color = ID)) +
   geom_point(alpha = 0.3) +
-  geom_line(data = id_fits, aes(x = photoperiod_hours, y = Acrophase_pred, color = ID), size = 0.8) +
-  geom_line(data = pred_data, aes(x = x, y = predicted), color = "black", size = 1.2, inherit.aes = FALSE) +
-  geom_ribbon(data = pred_data, aes(x = x, ymin = conf.low, ymax = conf.high),
+  geom_line(data = id_fits_phot_acr, aes(x = photoperiod_hours, y = Acrophase_pred, color = ID), size = 0.8) +
+  geom_line(data = pred_phot_acr, aes(x = x, y = predicted), color = "black", size = 1.2, inherit.aes = FALSE) +
+  geom_ribbon(data = pred_phot_acr, aes(x = x, ymin = conf.low, ymax = conf.high),
               inherit.aes = FALSE, fill = "grey70", alpha = 0.3) +
   theme_minimal() +
   labs(
@@ -3952,161 +3801,91 @@ ggplot(moving_window_all_ids, aes(x = photoperiod_hours, y = Acrophase_Raw_Hours
   ) +
   theme(plot.title = element_text(hjust = 0.5))
 ```
-## Trouble Shooting: Cosine Fit
+### Amplitude: Linear Mixed Model
 ```{r}
-# 1. Zeitreihe erzeugen
-datetime <- seq(
-  from = as.POSIXct("2025-01-01 00:00:00"),
-  to = as.POSIXct("2025-01-07 23:30:00"),
-  by = "30 min"
+model_photoperiod_amp <- lmer(
+  Amp ~ photoperiod_hours + (1 | ID),
+  data = moving_window_all_ids
 )
 
-# 2. Dezimalzeit für 24h-Periode
-dec.time <- as.numeric(format(datetime, "%H")) + as.numeric(format(datetime, "%M")) / 60
-
-# 3. Cosinus mit 24h-Periode, Maximum um 18 Uhr
-mesor <- 100
-amplitude <- 20
-phase_shift <- pi/2  # Maximum bei 18 Uhr
-
-glucose <- mesor + amplitude * cos(2 * pi * dec.time / 24 + phase_shift)
-
-# 4. In DataFrame
-synthetic_24h <- data.frame(datetime, dec.time, glucose)
-
-# 5. Plot
-ggplot(synthetic_24h, aes(x = datetime, y = glucose)) +
-  geom_line(color = "darkorange3") +
-  labs(
-    title = "Synthetische Glukosekurve (Min bei 6 Uhr, Max bei 18 Uhr)",
-    y = "Glukose", x = "Zeit"
-  ) +
-  theme_minimal()
-
-
-
-# 5. Cosinor-Komponenten
-synthetic_24h <- synthetic_24h %>%
-  mutate(
-    cos_part = cos(2 * pi * dec.time / 24),
-    sin_part = sin(2 * pi * dec.time / 24)
-  )
-
-
-
-### ----- Manueller lm-Fit -----
-fit_lm <- lm(glucose ~ cos_part + sin_part, data = synthetic_24h)
-coefs_lm <- coef(fit_lm)
-
-intercept_l <- coefs_lm["(Intercept)"]
-beta <- coefs_lm["cos_part"]
-gamma <- coefs_lm["sin_part"]
-
-amp_l <- sqrt(beta^2 + gamma^2)
-acr_rad_l <- atan2(gamma, beta) # HIER: normalerweise atan2(-gamma, beta), wenn man das minus rausnimmt, macht der Output Sinn
-acr_hr_l <- (acr_rad_l * 24 / (2 * pi)) %% 24
-max_time_l <- acr_hr_l
-min_time_l <- (acr_hr_l + 12) %% 24
-
-### ----- cosinor.lm-Fit -----
-fit_cos <- cosinor.lm(glucose ~ time(dec.time), data = synthetic_24h, period = 24)
-coefs_cos <- coef(fit_cos, transformed = TRUE)
-
-intercept_cos   <- coefs_cos["(Intercept)"]
-amp_cos         <- coefs_cos["amp"]
-acr_rad_cos <- coefs_cos["acr"]
-acr_hr_cos <- (acr_rad_cos * 24) / (2 * pi)
-max_time_cos    <- acr_hr_cos %% 24
-min_time_cos    <- (acr_hr_cos + 12) %% 24
-
-
-### ----- Zusammenfassung in DataFrame -----
-summary_df <- data.frame(
-  Window_Start      = as.POSIXct("2025-01-01 00:00:00"),
-  
-  # manuelles Modell
-  Intercept_lm      = intercept_l,
-  Amp_lm            = amp_l,
-  Acrophase_Rad_lm  = acr_rad_l,
-  Acrophase_Hours_lm= acr_hr_l,
-  MaxTime_Hours_lm  = max_time_l,
-  MinTime_Hours_lm  = min_time_l,
-  
-  # cosinor.lm Modell
-  Intercept_cos     = intercept_cos,
-  Amp_cos           = amp_cos,
-  Acrophase_Rad_cos = acr_rad_cos,
-  Acrophase_Hours_cos = acr_hr_cos,
-  MaxTime_Hours_cos = max_time_cos,
-  MinTime_Hours_cos = min_time_cos
-)
-
-######################## das ganze für den Datensatz der ID 102 ausprobieren
-
-# Daten für Patient ID 102 vorbereiten
-glucose_fit_102_data <- cleaned_data_deduplicated %>%
-  filter(ID == "102") %>% 
-  mutate(
-    datetime = dmy_hm(DeviceTimestamp), 
-    dec.time = hour(datetime) + minute(datetime) / 60
-  )
-
-# 5. Cosinor-Komponenten
-glucose_fit_102_data <- glucose_fit_102_data %>%
-  mutate(
-    cos_part = cos(2 * pi * dec.time / 24),
-    sin_part = sin(2 * pi * dec.time / 24)
-  )
-
-### ----- Manueller lm-Fit -----
-fit_lm <- lm(`Glucose (mg/dl)` ~ cos_part + sin_part, data = glucose_fit_102_data)
-coefs_lm <- coef(fit_lm)
-
-intercept_l <- coefs_lm["(Intercept)"]
-beta <- coefs_lm["cos_part"]
-gamma <- coefs_lm["sin_part"]
-
-amp_l <- sqrt(beta^2 + gamma^2)
-acr_rad_l <- atan2(gamma, beta) # HIER: normalerweise atan2(-gamma, beta)
-acr_hr_l <- (acr_rad_l * 24 / (2 * pi)) %% 24
-max_time_l <- acr_hr_l
-min_time_l <- (acr_hr_l + 12) %% 24
-
-### ----- cosinor.lm-Fit -----
-fit_cos <- cosinor.lm(`Glucose (mg/dl)` ~ time(dec.time), data = glucose_fit_102_data, period = 24)
-coefs_cos <- coef(fit_cos, transformed = TRUE)
-
-intercept_cos <- coefs_cos["(Intercept)"]
-amp_cos <- coefs_cos["amp"]
-acr_rad_cos <- coefs_cos["acr"]
-acr_hr_cos <- (acr_rad_cos * 24 / (2 * pi)) %% 24  # Konsistent: %% 24 hier anwenden
-max_time_cos <- acr_hr_cos
-min_time_cos <- (acr_hr_cos + 12) %% 24
-
-### ----- Zusammenfassung in DataFrame -----
-summary_df_102 <- data.frame(
-  Patient_ID = "102",
-  Window_Start = min(glucose_fit_102_data$datetime, na.rm = TRUE),
-  Window_End = max(glucose_fit_102_data$datetime, na.rm = TRUE),
-  N_Observations = nrow(glucose_fit_102_data),
-  
-  # manuelles Modell
-  Intercept_lm = intercept_l,
-  Amp_lm = amp_l,
-  Acrophase_Rad_lm = acr_rad_l,
-  Acrophase_Hours_lm = acr_hr_l,
-  MaxTime_Hours_lm = max_time_l,
-  MinTime_Hours_lm = min_time_l,
-  
-  # cosinor.lm Modell
-  Intercept_cos = intercept_cos,
-  Amp_cos = amp_cos,
-  Acrophase_Rad_cos = acr_rad_cos,
-  Acrophase_Hours_cos = acr_hr_cos,
-  MaxTime_Hours_cos = max_time_cos,
-  MinTime_Hours_cos = min_time_cos
-)
+summary(model_photoperiod_amp)
 ```
+**Description:** Plot
+```{r}
+# Per-ID fits
+id_fits_amp <- moving_window_all_ids %>%
+  group_by(ID) %>%
+  do({
+    model_id <- lm(Amp ~ photoperiod_hours, data = .)
+    data.frame(
+      photoperiod_hours = seq(min(.$photoperiod_hours), max(.$photoperiod_hours), length.out = 100),
+      Amp_pred = predict(model_id, newdata = data.frame(
+        photoperiod_hours = seq(min(.$photoperiod_hours), max(.$photoperiod_hours), length.out = 100)
+      )),
+      ID = unique(.$ID)
+    )
+  })
 
+# Overall fit from the mixed model
+pred_amp <- ggeffects::ggpredict(model_photoperiod_amp, terms = "photoperiod_hours")
 
+# Plot
+ggplot(moving_window_all_ids, aes(x = photoperiod_hours, y = Amp, color = ID)) +
+  geom_point(alpha = 0.3) +
+  geom_line(data = id_fits_amp, aes(x = photoperiod_hours, y = Amp_pred, color = ID), size = 0.8) +
+  geom_line(data = pred_amp, aes(x = x, y = predicted), color = "black", size = 1.2, inherit.aes = FALSE) +
+  geom_ribbon(data = pred_amp, aes(x = x, ymin = conf.low, ymax = conf.high),
+              inherit.aes = FALSE, fill = "grey70", alpha = 0.3) +
+  theme_minimal() +
+  labs(
+    title = "Amplitude vs. Photoperiod per ID + Overall Trend",
+    x = "Photoperiod (hours)",
+    y = "Amplitude"
+  ) +
+  theme(plot.title = element_text(hjust = 0.5))
 
+```
+### Intercept: Linear Mixed Model
+```{r}
+model_photoperiod_int <- lmer(
+  Intercept ~ photoperiod_hours + (1 | ID),
+  data = moving_window_all_ids
+)
+
+summary(model_photoperiod_int)
+```
+**Description:** Plot
+```{r}
+# Per-ID fits
+id_fits_int <- moving_window_all_ids %>%
+  group_by(ID) %>%
+  do({
+    model_id <- lm(Intercept ~ photoperiod_hours, data = .)
+    data.frame(
+      photoperiod_hours = seq(min(.$photoperiod_hours), max(.$photoperiod_hours), length.out = 100),
+      Intercept_pred = predict(model_id, newdata = data.frame(
+        photoperiod_hours = seq(min(.$photoperiod_hours), max(.$photoperiod_hours), length.out = 100)
+      )),
+      ID = unique(.$ID)
+    )
+  })
+
+# Overall fit from the mixed model
+pred_int <- ggeffects::ggpredict(model_photoperiod_int, terms = "photoperiod_hours")
+
+# Plot
+ggplot(moving_window_all_ids, aes(x = photoperiod_hours, y = Intercept, color = ID)) +
+  geom_point(alpha = 0.3) +
+  geom_line(data = id_fits_int, aes(x = photoperiod_hours, y = Intercept_pred, color = ID), size = 0.8) +
+  geom_line(data = pred_int, aes(x = x, y = predicted), color = "black", size = 1.2, inherit.aes = FALSE) +
+  geom_ribbon(data = pred_int, aes(x = x, ymin = conf.low, ymax = conf.high),
+              inherit.aes = FALSE, fill = "grey70", alpha = 0.3) +
+  theme_minimal() +
+  labs(
+    title = "Intercept vs. Photoperiod per ID + Overall Trend",
+    x = "Photoperiod (hours)",
+    y = "Intercept"
+  ) +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
