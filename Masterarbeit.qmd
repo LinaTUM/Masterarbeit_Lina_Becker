@@ -1142,6 +1142,7 @@ glucose_summary_table <- cleaned_data_deduplicated %>%
     Max = max(`Glucose (mg/dl)`, na.rm = TRUE),
     .groups = "drop"
   )
+print(glucose_summary_table)
 ```
 **Description:** Plot 2
 ```{r}
@@ -1897,8 +1898,8 @@ synthetic_24h <- data.frame(datetime, dec.time, glucose)
 ggplot(synthetic_24h, aes(x = datetime, y = glucose)) +
   geom_line(color = "darkorange3") +
   labs(
-    title = "Synthetische Glukosekurve (Min bei 6 Uhr, Max bei 18 Uhr)",
-    y = "Glukose", x = "Zeit"
+    title = "Synthetic Glucose Curve (Min at 6:00 , Max bei 18:00)",
+    y = "Glucose (mg/dl)", x = "Time (days)"
   ) +
   theme_minimal()
 
@@ -3503,6 +3504,32 @@ summary(model_acr_season)
          y = "Acrophase") +
     theme(plot.title = element_text(hjust = 0.5))
 ```
+**Description:** Plot with adjusted data
+```{r}
+if (!requireNamespace("emmeans", quietly = TRUE)) {
+  install.packages("emmeans")
+}
+
+library(emmeans)
+
+# Get estimated marginal means (adjusted for ID random effect)
+emm_acr <- emmeans(model_acr_season, ~ Season)
+
+# Convert to data frame for plotting
+emm_acr <- as.data.frame(emm_acr)
+
+# Plot adjusted means with 95% CI
+ggplot(emm_acr, aes(x = Season, y = emmean)) +
+  geom_point(size = 3, color = "darkblue") +
+  geom_errorbar(aes(ymin = emmean - SE * qt(0.975, df),
+                    ymax = emmean + SE * qt(0.975, df)),
+                width = 0.2, color = "darkblue") +
+  theme_minimal() +
+  labs(title = "Model-adjusted Acrophase by Season",
+       x = "Season",
+       y = "Adjusted Acrophase (in hours") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
 #### Amplitude: Linear Mixed Effects Model
 ```{r}
 model_amp_season <- lmer(Amp ~ Season + (1 | ID), data = moving_window_all_ids)
@@ -3518,10 +3545,31 @@ ggplot(moving_window_all_ids, aes(x = Season, y = Amp)) +
   theme(plot.title = element_text(hjust = 0.5))
 
 ```
+**Description:** Plot with adjusted data
+```{r}
+# Get estimated marginal means (adjusted for ID random effect)
+emm_amp <- emmeans(model_amp_season, ~ Season)
+
+# Convert to data frame for plotting
+emm_amp <- as.data.frame(emm_amp)
+
+# Plot adjusted means with 95% CI
+library(ggplot2)
+ggplot(emm_amp, aes(x = Season, y = emmean)) +
+  geom_point(size = 3, color = "darkgreen") +
+  geom_errorbar(aes(ymin = emmean - SE * qt(0.975, df),
+                    ymax = emmean + SE * qt(0.975, df)),
+                width = 0.2, color = "darkgreen") +
+  theme_minimal() +
+  labs(title = "Model-adjusted Amplitude by Season",
+       x = "Season",
+       y = "Adjusted Amplitude (in mg/dl") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
 #### Intercept: Linear Mixed Effects Model
 ```{r}
-model_intercept_season <- lmer(Intercept ~ Season + (1 | ID), data = moving_window_all_ids)
-summary(model_intercept_season)
+model_int_season <- lmer(Intercept ~ Season + (1 | ID), data = moving_window_all_ids)
+summary(model_int_season)
 
 # Intercept Boxplot
 ggplot(moving_window_all_ids, aes(x = Season, y = Intercept)) +
@@ -3530,6 +3578,26 @@ ggplot(moving_window_all_ids, aes(x = Season, y = Intercept)) +
   labs(title = "Intercept by Season",
        x = "Season",
        y = "Intercept") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+**Description:** Plot with adjusted data
+```{r}
+# Get estimated marginal means (model-adjusted means)
+emm_int <- emmeans(model_int_season, ~ Season)
+
+# Convert to data frame for plotting
+emm_int <- as.data.frame(emm_int)
+
+# Plot adjusted means with 95% CI
+ggplot(emm_int, aes(x = Season, y = emmean)) +
+  geom_point(size = 3, color = "darkred") +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), width = 0.2, color = "darkred") +
+  theme_minimal() +
+  labs(
+    title = "Model-adjusted Intercept by Season",
+    x = "Season",
+    y = "Adjusted Intercept (in mg/dl)"
+  ) +
   theme(plot.title = element_text(hjust = 0.5))
 ```
 ### Seasonal Cosinus Fit: Raw Data (NOT NEEDED)
@@ -3561,76 +3629,71 @@ ggplot(moving_window_all_ids, aes(x = Season, y = Intercept)) +
 ### Polar Plots 
 #### Polar Plot for Acrophase for all IDs
 ```{r}
-# Rad-Winkel berechnen
-  moving_window_all_ids <- moving_window_all_ids %>%
-    mutate(Max_Rad = (Max_Time_Hours / 24) * 2 * pi)
+
+# Calculate Max_Rad
+moving_window_all_ids <- moving_window_all_ids %>%
+  mutate(Max_Rad = (Max_Time_Hours / 24) * 2 * pi)
+
+# Initialize Data Frames for Pointer and SD-Rectangles
+all_pointers <- data.frame()
+all_rects <- data.frame()
+
+# Loop for all IDs
+for (id in id_list) {
+  df_id <- moving_window_all_ids %>% filter(ID == id)
   
-  # Initialize Data Frames for Pointer and SD-Rectangles
-  all_pointers <- data.frame()
-  all_rects <- data.frame()
+  avg_max <- mean(df_id$Max_Rad, na.rm = TRUE)
+  sd_max <- sd(df_id$Max_Rad, na.rm = TRUE)
+  n_points <- sum(!is.na(df_id$Max_Rad))  # sample size
   
-  # Loop for all IDs
-  for (id in id_list) {
-    df_id <- moving_window_all_ids %>% filter(ID == id)
-    
-    avg_max <- mean(df_id$Max_Rad, na.rm = TRUE)
-    sd_max <- sd(df_id$Max_Rad, na.rm = TRUE)
-    
-    rect_ymin <- 1 - 0.05 * (which(id_list == id))  
-    rect_ymax <- rect_ymin + 0.05
-    
-    all_pointers <- bind_rows(all_pointers, data.frame(
-      angle = avg_max,
-      label = paste0("Avg Max ", id)
-    ))
-    
-    all_rects <- bind_rows(all_rects, data.frame(
-      xmin = avg_max - sd_max,
-      xmax = avg_max + sd_max,
-      ymin = rect_ymin,
-      ymax = rect_ymax,
-      label = paste0("Avg Max ", id)
-    ))
-  }
+  rect_ymin <- 1 - 0.05 * (which(id_list == id))  
+  rect_ymax <- rect_ymin + 0.05
   
- # Add IDs to data frames 
-  library(stringr)
+  # Label with n
+  label_with_n <- paste0(id, " (n = ", n_points, ")")
   
-  all_pointers <- all_pointers %>%
-    mutate(ID = str_extract(label, "\\d+"))
+  all_pointers <- bind_rows(all_pointers, data.frame(
+    angle = avg_max,
+    ID = label_with_n
+  ))
   
-  all_rects <- all_rects %>%
-    mutate(ID = str_extract(label, "\\d+"))
-  
-  
-  # Plot
-  ggplot() +
-    geom_rect(data = all_rects,
-              aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = ID),
-              alpha = 0.3) +
-    geom_segment(data = all_pointers,
-                 aes(x = angle, xend = angle, y = 0, yend = 1, color = ID),
-                 linewidth = 0.6) +
-    coord_polar(start = 0) +
-    scale_x_continuous(
+  all_rects <- bind_rows(all_rects, data.frame(
+    xmin = avg_max - sd_max,
+    xmax = avg_max + sd_max,
+    ymin = rect_ymin,
+    ymax = rect_ymax,
+    ID = label_with_n
+  ))
+}
+
+# Plot
+ggplot() +
+  geom_rect(data = all_rects,
+            aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = ID),
+            alpha = 0.3) +
+  geom_segment(data = all_pointers,
+               aes(x = angle, xend = angle, y = 0, yend = 1, color = ID),
+               linewidth = 0.6) +
+  coord_polar(start = 0) +
+  scale_x_continuous(
     breaks = seq(0, 2 * pi * 23/24, length.out = 24),
     labels = 0:23,
     limits = c(0, 2 * pi)) +
-    scale_y_continuous(limits = c(0, 1), labels = NULL) +
-    labs(
-      title = "Acrophase + SD for all IDs",
-      x = "Time of Day",
-      y = NULL,
-      color = "Pointer",
-      fill = "Standard Deviation"
-    ) +
-    theme_minimal() +
-    theme(
-      axis.title.y = element_blank(),
-      panel.grid.major = element_line(color = "grey80"),
-      panel.grid.minor = element_blank(),
-      legend.position = "bottom"
-    )
+  scale_y_continuous(limits = c(0, 1), labels = NULL) +
+  labs(
+    title = "Acrophase + SD for all IDs",
+    x = "Time of Day",
+    y = NULL,
+    color = "ID",
+    fill = "ID"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.title.y = element_blank(),
+    panel.grid.major = element_line(color = "grey80"),
+    panel.grid.minor = element_blank(),
+    legend.position = "bottom"
+  )
 ```
 #### Polar Plot of all IDs with Seasons
 ```{r}
@@ -3766,7 +3829,7 @@ ggplot(moving_window_all_ids, aes(x = photoperiod_hours, y = Acrophase_Raw_Hours
   labs(
     title = "Acrophase vs. Photoperiod (LME fit)",
     x = "Photoperiod (hours)",
-    y = "Acrophase (hours since midnight)"
+    y = "Acrophase (hours of the day)"
   ) +
   theme(plot.title = element_text(hjust = 0.5))
 ```
@@ -3797,7 +3860,7 @@ ggplot(moving_window_all_ids, aes(x = photoperiod_hours, y = Acrophase_Raw_Hours
   labs(
     title = "Acrophase vs. Photoperiod per ID + Overall Trend",
     x = "Photoperiod (hours)",
-    y = "Acrophase (hours since midnight)"
+    y = "Acrophase (hours of the day)"
   ) +
   theme(plot.title = element_text(hjust = 0.5))
 ```
