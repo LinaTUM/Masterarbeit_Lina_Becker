@@ -3345,8 +3345,20 @@ ggplot(moving_window_112, aes(x = Window_Start)) +
 ```
 #### Moving Window with lm()
 ```{r}
+glucose_fit_data <- glucose_fit_data %>%
+  mutate(
+    # DST-Correction
+    datetime_std = datetime - hours(as.integer(lubridate::dst(datetime))),
+    
+    # decimal time based on standard time
+    dec.time_std = hour(datetime_std) + minute(datetime_std) / 60,
+  )
+```
+
+```{r}
 library(dplyr)
 library(lubridate)
+
 
 # Leere Liste für alle IDs
 all_results <- list()
@@ -3368,13 +3380,13 @@ for (id in ids) {
   # Prüfe, ob genug Daten da sind
   if (nrow(glucose_id_data) < 400) next
   
-  # Zeitgrenzen
-  start_time <- min(glucose_id_data$datetime)
-  end_time   <- max(glucose_id_data$datetime)
+  # Zeitgrenzent
+  start_time <- min(glucose_id_data$datetime_std,na.rm = TRUE)
+  end_time   <- max(glucose_id_data$datetime_std,na.rm = TRUE)
   
   # Starte Sliding Window
   current_start <- start_time
-  id_results <- list()  # Zwischenspeicher pro ID
+  id_results <- list()  # save per ID
   
   while (current_start + window_length <= end_time) {
     
@@ -3382,7 +3394,7 @@ for (id in ids) {
     
     # Daten im Fenster
     window_data <- glucose_id_data %>%
-      filter(datetime >= current_start & datetime < current_end)
+      filter(datetime_std >= current_start & datetime_std < current_end)
     
     # Skip bei zu wenigen Datenpunkten
     if (nrow(window_data) < 400) {
@@ -3391,7 +3403,7 @@ for (id in ids) {
     }
     
     # Calculate cosine components
-    dec_time <- window_data$dec.time
+    dec_time <- window_data$dec.time_std
     window_data$cos_part <- cos(2 * pi * dec_time / 24)
     window_data$sin_part <- sin(2 * pi * dec_time / 24)
     
@@ -3527,7 +3539,7 @@ ggplot(emm_acr, aes(x = Season, y = emmean)) +
   theme_minimal() +
   labs(title = "Model-adjusted Acrophase by Season",
        x = "Season",
-       y = "Adjusted Acrophase (in hours") +
+       y = "Adjusted Acrophase (in hours)") +
   theme(plot.title = element_text(hjust = 0.5))
 ```
 #### Amplitude: Linear Mixed Effects Model
@@ -3563,7 +3575,7 @@ ggplot(emm_amp, aes(x = Season, y = emmean)) +
   theme_minimal() +
   labs(title = "Model-adjusted Amplitude by Season",
        x = "Season",
-       y = "Adjusted Amplitude (in mg/dl") +
+       y = "Adjusted Amplitude (in mg/dl)") +
   theme(plot.title = element_text(hjust = 0.5))
 ```
 #### Intercept: Linear Mixed Effects Model
@@ -3600,35 +3612,11 @@ ggplot(emm_int, aes(x = Season, y = emmean)) +
   ) +
   theme(plot.title = element_text(hjust = 0.5))
 ```
-### Seasonal Cosinus Fit: Raw Data (NOT NEEDED)
-**Description:** Bind Data Sets
-```{r}
-  # IDs und zugehörige DataFrames
-  id_list <- c(102, 104, 107, 108, 109, 112)
-  
-  # Liste der DataFrames in gleicher Reihenfolge (z. B. vorher erstellt)
-  moving_window_list <- list(
-    moving_window_102,
-    moving_window_104,
-    moving_window_107,
-    moving_window_108,
-    moving_window_109,
-    moving_window_112
-  )
-  
-  # Füge die ID zu jedem DataFrame hinzu
-  moving_window_data <- Map(function(df, id) {
-    df$ID <- id
-    return(df)
-  }, moving_window_list, id_list)
-  
-  # Binde alles zusammen
-  moving_window_data <- bind_rows(moving_window_data)
-```
 
 ### Polar Plots 
 #### Polar Plot for Acrophase for all IDs
 ```{r}
+ id_list <- c(102, 104, 107, 108, 109, 112)
 
 # Calculate Max_Rad
 moving_window_all_ids <- moving_window_all_ids %>%
@@ -3695,6 +3683,35 @@ ggplot() +
     legend.position = "bottom"
   )
 ```
+**Description:** Numbers of the plot
+```{r}
+# Table for summary values
+all_summary <- data.frame()
+
+for (id in id_list) {
+  df_id <- moving_window_all_ids %>% filter(ID == id)
+  
+  avg_max <- mean(df_id$Max_Rad, na.rm = TRUE)
+  sd_max <- sd(df_id$Max_Rad, na.rm = TRUE)
+  n_points <- sum(!is.na(df_id$Max_Rad))  # sample size
+  
+  # Convert from radians -> hours
+  avg_hour <- (avg_max / (2 * pi)) * 24
+  sd_hour  <- (sd_max / (2 * pi)) * 24
+  
+  all_summary <- bind_rows(all_summary, data.frame(
+    ID = id,
+    n = n_points,
+    Avg_Rad = avg_max,
+    SD_Rad = sd_max,
+    Avg_Hour = avg_hour,
+    SD_Hour = sd_hour
+  ))
+}
+
+# Show the summary table
+print(all_summary)
+```
 #### Polar Plot of all IDs with Seasons
 ```{r}
 library(dplyr)
@@ -3760,6 +3777,24 @@ ggplot() +
     legend.position = "bottom"
   )
 ```
+**Description:** Numbers for Plots
+```{r}
+# Create summary table for acrophase per Season & ID
+season_table <- moving_window_all_ids %>%
+  group_by(ID, Season) %>%
+  summarise(
+    n = sum(!is.na(Max_Time_Hours)),
+    avg_max_rad = mean((Max_Time_Hours / 24) * 2 * pi, na.rm = TRUE),
+    sd_max_rad  = sd((Max_Time_Hours / 24) * 2 * pi, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    # Convert to hours
+    avg_hour = (avg_max_rad / (2 * pi)) * 24,
+    sd_hour  = (sd_max_rad / (2 * pi)) * 24
+  ) %>%
+  select(ID, Season, n, avg_hour, sd_hour)
+```
 ## Photoperiod Analysis
 ```{r}
 if (!requireNamespace("LightLogR", quietly = TRUE)) {
@@ -3773,7 +3808,7 @@ library(LightLogR)
 **Description:** Add photoperiod to dataset
 ```{r}
 coords <- c(52.52, 13.405)  # coords for Berlin
-tz <- "Europe/Berlin"
+tz <- "CET" # Central Europe Time
 
 # Suppose your dataset is `moving_window_all_ids` with a POSIXct column "Window_Start"
 photoperiod_df <- photoperiod(
@@ -3951,4 +3986,31 @@ ggplot(moving_window_all_ids, aes(x = photoperiod_hours, y = Intercept, color = 
   ) +
   theme(plot.title = element_text(hjust = 0.5))
 
+```
+### Arcrophase & Seasons
+```{r}
+photoperiod_season_acr <- lmer(
+  Acrophase_Raw_Hours ~ photoperiod_hours * Season + (1 | ID),
+  data = moving_window_all_ids
+)
+
+summary(photoperiod_season_acr)
+```
+### Amplitude & Seasons
+```{r}
+photoperiod_season_amp <- lmer(
+  Amp ~ photoperiod_hours * Season + (1 | ID),
+  data = moving_window_all_ids
+)
+
+summary(photoperiod_season_amp)
+```
+### Intercept & Seasons
+```{r}
+photoperiod_season_int <- lmer(
+  Intercept ~ photoperiod_hours * Season + (1 | ID),
+  data = moving_window_all_ids
+)
+
+summary(photoperiod_season_int)
 ```
