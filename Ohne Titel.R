@@ -5110,3 +5110,348 @@ ggplot(plot_df, aes(x = Hour, y = Glucose)) +
        y = "Modellierter Glukosewert (mg/dl)") +
   theme_minimal()
 
+
+# ---- 1. Synthetische Daten generieren (12-Stunden-Periode) ----
+datetime <- seq(
+  from = as.POSIXct("2025-01-01 00:00:00"),
+  to = as.POSIXct("2025-01-07 23:30:00"),
+  by = "30 min"
+)
+
+# Dezimalzeit (für cosinor)
+dec.time <- as.numeric(format(datetime, "%H")) + as.numeric(format(datetime, "%M")) / 60
+
+# Cosinus mit Periode = 12h, max bei 18 Uhr, min bei 6 Uhr
+mesor <- 100
+amplitude <- 20
+phase_shift <- -pi  # max bei 18 Uhr
+
+glucose <- mesor + amplitude * cos(2 * pi * dec.time / 12 + phase_shift)
+
+# In DataFrame
+synthetic_12h <- data.frame(datetime, dec.time, glucose)
+
+# Plot zur Kontrolle
+library(ggplot2)
+ggplot(synthetic_12h, aes(x = datetime, y = glucose)) +
+  geom_line(color = "steelblue") +
+  labs(title = "Synthetische Glukosekurve (Periode = 12 Stunden)",
+       y = "Glukose", x = "Zeit") +
+  theme_minimal()
+
+# ---- 2. Manuelles lm-Modell ----
+library(dplyr)
+synthetic_12h <- synthetic_12h %>%
+  mutate(
+    cos_part = cos(2 * pi * dec.time / 12),
+    sin_part = sin(2 * pi * dec.time / 12)
+  )
+
+fit_lm <- lm(glucose ~ cos_part + sin_part, data = synthetic_12h)
+coefs_lm <- coef(fit_lm)
+
+intercept_l <- coefs_lm["(Intercept)"]
+beta <- coefs_lm["cos_part"]
+gamma <- coefs_lm["sin_part"]
+
+amp_l <- sqrt(beta^2 + gamma^2)
+acr_l_rad <- atan2(-gamma, beta)
+acr_l_hr <- (acr_l_rad * 12 / (2 * pi)) %% 12  # auf 12h-Periode skalieren
+
+# ---- 3. cosinor.lm-Modell ----
+library(cosinor)
+fit_cos <- cosinor.lm(glucose ~ time(dec.time), data = synthetic_12h, period = 12)
+coefs_cos <- coef(fit_cos, transformed = TRUE)
+
+mesor_cos <- coefs_cos["mesor"]
+amp_cos <- coefs_cos["amplitude"]
+acr_cos_hr <- coefs_cos["acrophase (hr)"]
+
+# ---- 4a. Min/Max for manual model ----
+min_l <- intercept_l - amp_l
+max_l <- intercept_l + amp_l
+
+# ---- 4b. Min/Max for cosinor.lm model ----
+min_cos <- mesor_cos - amp_cos
+max_cos <- mesor_cos + amp_cos
+
+# ---- 5. Ausgabe ----
+cat("===== Manuelles lm-Modell =====\n")
+cat("Intercept (MESOR):", round(intercept_l, 2), "\n")
+cat("Amplitude:", round(amp_l, 2), "\n")
+cat("Acrophase (Stunden):", round(acr_l_hr, 2), "\n")
+cat("Minimale Glukose:", round(min_l, 2), "\n")
+cat("Maximale Glukose:", round(max_l, 2), "\n\n")
+
+cat("===== cosinor.lm-Modell =====\n")
+cat("MESOR:", round(mesor_cos, 2), "\n")
+cat("Amplitude:", round(amp_cos, 2), "\n")
+cat("Acrophase (Stunden):", round(acr_cos_hr, 2), "\n")
+cat("Minimale Glukose:", round(min_cos, 2), "\n")
+cat("Maximale Glukose:", round(max_cos, 2), "\n")
+
+# ---- 6. Uhrzeiten für Minimum und Maximum ----
+# Manuelles Modell
+max_time_l_hr <- acr_l_hr
+min_time_l_hr <- (acr_l_hr + 6) %% 12  # Periode = 12h
+
+# Umrechnung in Uhrzeit-Format (z. B. "06:00")
+to_time <- function(hour) {
+  sprintf("%02d:%02d", floor(hour), round((hour %% 1) * 60))
+}
+
+# cosinor.lm Modell
+max_time_cos_hr <- acr_cos_hr
+min_time_cos_hr <- (acr_cos_hr + 6) %% 12
+
+# ---- 7. Zusätzliche Ausgabe ----
+cat("===== Uhrzeiten für Min/Max (manuelles Modell) =====\n")
+cat("Max. bei ca.:", to_time(max_time_l_hr), "\n")
+cat("Min. bei ca.:", to_time(min_time_l_hr), "\n\n")
+
+cat("===== Uhrzeiten für Min/Max (cosinor.lm Modell) =====\n")
+cat("Max. bei ca.:", to_time(max_time_cos_hr), "\n")
+cat("Min. bei ca.:", to_time(min_time_cos_hr), "\n")
+
+
+
+
+
+
+library(ggplot2)
+library(dplyr)
+library(cosinor)
+
+# ---- 1. Synthetische Daten mit 24h-Periode ----
+datetime <- seq(
+  from = as.POSIXct("2025-01-01 00:00:00"),
+  to = as.POSIXct("2025-01-07 23:30:00"),
+  by = "30 min"
+)
+
+dec.time <- as.numeric(format(datetime, "%H")) + as.numeric(format(datetime, "%M")) / 60
+
+# Cosinus mit Periode = 24h, Max bei 6 Uhr
+mesor <- 100
+amplitude <- 20
+phase_shift <- -pi / 2  # Max bei 6 Uhr
+
+glucose <- mesor + amplitude * cos(2 * pi * dec.time / 24 + phase_shift)
+set.seed(123)
+
+
+synthetic_24h <- data.frame(datetime, dec.time, glucose)
+
+# ---- 2. Manuelles lm-Modell (für 24h-Periode) ----
+synthetic_24h <- synthetic_24h %>%
+  mutate(
+    cos_part = cos(2 * pi * dec.time / 24),
+    sin_part = sin(2 * pi * dec.time / 24)
+  )
+
+fit_lm <- lm(glucose ~ cos_part + sin_part, data = synthetic_24h)
+coefs_lm <- coef(fit_lm)
+
+intercept_l <- coefs_lm["(Intercept)"]
+beta <- coefs_lm["cos_part"]
+gamma <- coefs_lm["sin_part"]
+
+amp_l <- sqrt(beta^2 + gamma^2)
+acr_l_rad <- atan2(gamma, beta)
+acr_l_hr <- (acr_l_rad * 24 / (2 * pi)) %% 24  # jetzt 24h-Periode
+
+# ---- 3. cosinor.lm-Modell (24h-Periode) ----
+fit_cos <- cosinor.lm(glucose ~ time(dec.time), data = synthetic_24h, period = 24)
+coefs_cos <- coef(fit_cos, transformed = TRUE)
+
+mesor_cos   <- coefs_cos["(Intercept)"]
+amp_cos     <- coefs_cos["amp"]
+acr_cos_hr  <- coefs_cos["acr"]
+
+# ---- 4a. Min/Max für manuelles Modell ----
+min_l <- intercept_l - amp_l
+max_l <- intercept_l + amp_l
+
+# ---- 4b. Min/Max für cosinor.lm Modell ----
+min_cos <- mesor_cos - amp_cos
+max_cos <- mesor_cos + amp_cos
+
+# ---- 5. Uhrzeiten für Minimum & Maximum berechnen ----
+max_time_l_hr <- acr_l_hr
+min_time_l_hr <- (acr_l_hr + 12) %% 24  # 12h Unterschied bei 24h-Periode
+
+max_time_cos_hr <- acr_cos_hr
+min_time_cos_hr <- (acr_cos_hr + 12) %% 24
+
+# Uhrzeit-Format
+to_time <- function(hour) {
+  sprintf("%02d:%02d", floor(hour), round((hour %% 1) * 60))
+}
+
+# ---- 6. Ausgabe ----
+cat("===== Manuelles lm-Modell =====\n")
+cat("Intercept (MESOR):", round(intercept_l, 2), "\n")
+cat("Amplitude:", round(amp_l, 2), "\n")
+cat("Acrophase (Stunden):", round(acr_l_hr, 2), "\n")
+cat("Maximale Glukose:", round(max_l, 2), "bei ca.", to_time(max_time_l_hr), "\n")
+cat("Minimale Glukose:", round(min_l, 2), "bei ca.", to_time(min_time_l_hr), "\n\n")
+
+cat("===== cosinor.lm-Modell =====\n")
+cat("MESOR:", round(mesor_cos, 2), "\n")
+cat("Amplitude:", round(amp_cos, 2), "\n")
+cat("Acrophase (Stunden):", round(acr_cos_hr, 2), "\n")
+cat("Maximale Glukose:", round(max_cos, 2), "bei ca.", to_time(max_time_cos_hr), "\n")
+cat("Minimale Glukose:", round(min_cos, 2), "bei ca.", to_time(min_time_cos_hr), "\n")
+
+summary(fit_cos)
+summary(fit_lm)
+
+
+
+
+
+library(ggplot2)
+
+# 1. Zeitreihe erzeugen
+datetime <- seq(
+  from = as.POSIXct("2025-01-01 00:00:00"),
+  to = as.POSIXct("2025-01-07 23:30:00"),
+  by = "30 min"
+)
+
+# 2. Dezimalzeit für 24h-Periode
+dec.time <- as.numeric(format(datetime, "%H")) + as.numeric(format(datetime, "%M")) / 60
+
+# 3. Cosinus mit 24h-Periode, Maximum um 6 Uhr
+mesor <- 100
+amplitude <- 20
+phase_shift <- pi/2  # Maximum bei 6 Uhr
+
+glucose <- mesor + amplitude * cos(2 * pi * dec.time / 24 + phase_shift)
+
+# 4. In DataFrame
+synthetic_24h <- data.frame(datetime, dec.time, glucose)
+
+# 5. Plot
+ggplot(synthetic_24h, aes(x = datetime, y = glucose)) +
+  geom_line(color = "darkorange3") +
+  labs(
+    title = "Synthetische Glukosekurve (Max bei 6 Uhr, Min bei 18 Uhr)",
+    y = "Glukose", x = "Zeit"
+  ) +
+  theme_minimal()
+
+
+
+# Pakete laden
+library(dplyr)
+library(cosinor)
+library(lubridate)
+
+# 1. Zeitreihe erzeugen
+datetime <- seq(
+  from = as.POSIXct("2025-01-01 00:00:00"),
+  to   = as.POSIXct("2025-01-07 23:30:00"),
+  by   = "30 min"
+)
+
+# 2. Dezimalzeit für 24h-Periode
+dec.time <- as.numeric(format(datetime, "%H")) + as.numeric(format(datetime, "%M")) / 60
+
+# 3. Cosinus mit 24h-Periode, Maximum um 6 Uhr
+mesor     <- 100
+amplitude <- 20
+phase_shift <- pi / 2  # → Maximum bei 6 Uhr
+
+glucose <- mesor + amplitude * cos(2 * pi * dec.time / 24 + phase_shift)
+
+# 4. In DataFrame
+synthetic_24h <- data.frame(datetime, dec.time, glucose)
+
+# 5. Cosinor-Komponenten
+synthetic_24h <- synthetic_24h %>%
+  mutate(
+    cos_part = cos(2 * pi * dec.time / 24),
+    sin_part = sin(2 * pi * dec.time / 24)
+  )
+
+### ----- Manueller lm-Fit -----
+fit_lm <- lm(glucose ~ cos_part + sin_part, data = synthetic_24h)
+coefs_lm <- coef(fit_lm)
+
+intercept_l <- coefs_lm["(Intercept)"]
+beta <- coefs_lm["cos_part"]
+gamma <- coefs_lm["sin_part"]
+
+amp_l <- sqrt(beta^2 + gamma^2)
+acr_rad_l <- atan2(-gamma, beta)
+acr_hr_l <- (acr_rad_l * 24 / (2 * pi)) %% 24
+max_time_l <- acr_hr_l
+min_time_l <- (acr_hr_l + 12) %% 24
+
+### ----- cosinor.lm-Fit -----
+fit_cos <- cosinor.lm(glucose ~ time(dec.time), data = synthetic_24h, period = 24)
+coefs_cos <- coef(fit_cos, transformed = TRUE)
+
+
+acr_rad_cos     <- (acr_hr_cos * 2 * pi) / 24
+intercept_cos   <- coefs_cos["(Intercept)"]
+amp_cos     <- coefs_cos["amp"]
+acr_hr_cos  <- coefs_cos["acr"]
+
+max_time_cos <- acr_hr_cos %% 24
+min_time_cos <- (acr_hr_cos + 12) %% 24
+
+### ----- Zusammenfassung in DataFrame -----
+summary_df <- data.frame(
+  Window_Start      = as.POSIXct("2025-01-01 00:00:00"),
+  
+  # manuelles Modell
+  Intercept_lm      = intercept_l,
+  Amp_lm            = amp_l,
+  Acrophase_Rad_lm  = acr_rad_l,
+  Acrophase_Hours_lm= acr_hr_l,
+  MaxTime_Hours_lm  = max_time_l,
+  MinTime_Hours_lm  = min_time_l,
+  
+  # cosinor.lm Modell
+  Intercept_cos     = intercept_cos,
+  Amp_cos           = amp_cos,
+  Acrophase_Rad_cos = acr_rad_cos,
+  Acrophase_Hours_cos = acr_hr_cos,
+  MaxTime_Hours_cos = max_time_cos,
+  MinTime_Hours_cos = min_time_cos
+)
+
+### Ausgabe
+print(summary_df)
+
+
+
+# Zuerst testen, was cosinor.lm ausgibt
+fit_cos <- cosinor.lm(glucose ~ time(dec.time), data = synthetic_24h, period = 24)
+coefs_cos <- coef(fit_cos, transformed = TRUE)
+print(coefs_cos)  # Schauen Sie sich die "acr" Werte an
+
+# Dann entsprechend anpassen:
+intercept_cos <- coefs_cos["(Intercept)"]
+amp_cos <- coefs_cos["amp"]
+
+# OPTION 1: Wenn acr in RADIANS ausgegeben wird
+if (abs(coefs_cos["acr"]) <= 2*pi) {  # Wahrscheinlich Radians
+  acr_rad_cos <- coefs_cos["acr"]
+  acr_hr_cos <- (acr_rad_cos * 24) / (2 * pi)
+} else {  # OPTION 2: Wenn acr bereits in HOURS ausgegeben wird
+  acr_hr_cos <- coefs_cos["acr"]  
+  acr_rad_cos <- (acr_hr_cos * 2 * pi) / 24
+}
+
+max_time_cos <- acr_hr_cos %% 24
+min_time_cos <- (acr_hr_cos + 12) %% 24
+
+
+### Season Analyse
+
+attr(cleaned_data_deduplicated$Timestamp, "tzone")
+Sys.timezone()
+
