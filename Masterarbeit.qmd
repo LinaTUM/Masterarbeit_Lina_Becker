@@ -25,49 +25,49 @@ library(stringr)
 **Description:** Define Directory and Combine Single Data Files into one Dataset
 
 ```{r}
-# define the directory containing the files
+# Define the directory containing the files
 data_directory <- "/Users/linabecker/Documents/M.Sc. Health Science/Masterarbeit/Masterarbeit/Datensätze"
 
-# list all CSV files in the directory
+# List all CSV files in the directory
 file_list <- list.files(path = data_directory, pattern = "*.csv", full.names = TRUE)
 
-# initialize an empty list to store individual data frames
+# Initialize an empty list to store individual data frames
 data_list <- list()
 
-# loop over each file to read, process, and add to data_list
+# Loop over each file to read, process, and add to data_list
 for (file in file_list) {
   # Extract the ID from the filename
   id <- sub("_.*", "", basename(file))
   
-  # read the file, skipping the first row and using the second row as the header
+  # Read the file, skipping the first row and using the second row as the header
   df <- read.csv(file, skip = 1, header = TRUE)
   
-  # add the ID column
+  # Add the ID column
   df$ID <- id
   
-  # append the processed data frame to the list
+  # Append the processed data frame to the list
   data_list[[length(data_list) + 1]] <- df
 }
 
-# combine all individual data frames into one
+# Combine all individual data frames into one
 combined_data <- bind_rows(data_list)
 
-# view the combined data 
+# View the combined data 
 head(combined_data)
 
-# get a summary of unique IDs
+# Get a summary of unique IDs
 id_summary <- combined_data %>%
   distinct(ID) %>%
   count()
 
-# display the summary
+# Display the summary
 id_summary
 
-# convert ID to a factor
+# Convert ID to a factor
 combined_data <- combined_data %>%
   mutate(ID = as.factor(ID))
 
-# rename the columns
+# Rename the columns
 combined_data <- combined_data %>%
   rename(
     DeviceTimestamp = Device.Timestamp,
@@ -77,30 +77,30 @@ combined_data <- combined_data %>%
 
 
 
-# view the updated column names (optional)
+# View the updated column names (optional)
 colnames(combined_data)
 
-# convert the timestamp column to POSIXct format
+# Convert the timestamp column to POSIXct format
 combined_data$Timestamp <- as.POSIXct(combined_data$DeviceTimestamp, format = "%d-%m-%Y %H:%M")
 
-# verify the structure to confirm the change
+# Verify the structure to confirm the change
 str(combined_data$Timestamp)
 
-# reorder columns, placing timestamp as the fourth column
+# Reorder columns, placing timestamp as the fourth column
 combined_data <- combined_data %>%
   select(1:3, Timestamp, everything())%>%
   arrange(Timestamp)
 
-#check all values of record types
+# Check all values of record types
 
 summary(combined_data$Record.Type)
 table(combined_data$Record.Type)
 
-# process the data as specified
+# Process the data as specified
 combined_data <- combined_data %>%
-  # remove rows where Record.Type is 5 or 6
+  # Remove rows where Record.Type is 5 or 6
   filter(!(Record.Type %in% c(5, 6))) %>%
-  # create a new column 'Glucose level'
+  # Create a new column 'Glucose level'
   mutate(
     "Glucose (mg/dl)" = if_else(
       !is.na(`Glucose levels (mg/dl)`), 
@@ -109,7 +109,7 @@ combined_data <- combined_data %>%
     )
   )
 
-# view the first few rows to verify
+# View the first few rows to verify
 head(combined_data)
 ```
 
@@ -123,11 +123,11 @@ combined_data <- combined_data %>%
 **Description:** Get an Overview of Distribution of Historic and Scanned Glucose Data
 
 ```{r}
-# filter out rows where both glucose values are missing
+# Filter out rows where both glucose values are missing
 glucose_data <- combined_data %>%
   filter(!is.na(`Glucose levels (mg/dl)`) | !is.na(`Scan glucose levels (mg/dl)`))
 
-# plot all participants in one faceted plot
+# Plot all participants in one faceted plot
 ggplot(glucose_data, aes(x = Timestamp)) +
   geom_point(aes(y = `Glucose levels (mg/dl)`), color = "blue", size = 0.1, alpha = 0.7) +
   geom_point(aes(y = `Scan glucose levels (mg/dl)`), color = "red", size = 0.1, alpha = 0.9) +
@@ -152,7 +152,7 @@ ggplot(glucose_data, aes(x = Timestamp)) +
 **Description:** Filter out all Columns not Needed and not Historic
 
 ```{r}
-# filter out rows with NA or infinite values in timestamp and glucose levels columns --> filter out all glucose levels, which are not historic glucose levels (which are scan glucose levels)
+# Filter out rows with NA or infinite values in timestamp and glucose levels columns --> filter out all glucose levels, which are not historic glucose levels (which are scan glucose levels)
 cleaned_data <- combined_data %>%
   filter(!is.na(Timestamp), !is.na(`Glucose levels (mg/dl)`), is.finite(`Glucose levels (mg/dl)`))
 
@@ -169,26 +169,26 @@ cleaned_data <- cleaned_data %>%
 **Description:** Check if there are Missings in Glucose Values
 
 ```{r}
-# add a column to indicate missing or non-finite values in Glucose (1 = Missing/Non-finite, 0 = Present)
+# Add a column to indicate missing or non-finite values in Glucose (1 = Missing/Non-finite, 0 = Present)
 cleaned_data <- cleaned_data %>%
   mutate(
     Missing = ifelse(is.na(`Glucose (mg/dl)`) | !is.finite(`Glucose (mg/dl)`), 1, 0)
   )
 
-# check how many columns have the value 1 in Missings
+# Check how many columns have the value 1 in Missings
 sum(cleaned_data$Missing == 1)
 
 ```
 
-**Description**: Create a Table Showing an o+Overview of Expected Number versus Real Number of Measurements per ID per Month
+**Description**: Create a Table Showing an Overview of Expected Number versus Real Number of Measurements per ID per Month
 
 ```{r}
-# determine the start date for each ID (earliest timestamp)
+# Determine the start date for each ID (earliest timestamp)
 id_start_dates <- cleaned_data %>%
   group_by(ID) %>%
   summarise(Start_Date = min(Timestamp, na.rm = TRUE) , .groups = "drop")
 
-# join the start date back to the main data and filter to include only records from the start date onward
+# Join the start date back to the main data and filter to include only records from the start date onward
 cleaned_data_filtered <- cleaned_data %>%
   left_join(id_start_dates, by = "ID") %>%
   filter(Timestamp >= Start_Date | is.na(Timestamp))  # include rows where Timestamp is NA as well
@@ -197,22 +197,22 @@ cleaned_data_filtered <- cleaned_data %>%
 **Description**: Table with Overview
 
 ```{r}
-# add Month and Year
+# Add Month and Year
 glucose_monthly_summary <- cleaned_data %>%
   mutate(
     Month = floor_date(Timestamp, "month")
   ) %>%
   group_by(ID, Month) %>%
   summarise(
-    Measured_Values = n(),  # measured Values
-    Days_Observed = n_distinct(as.Date(Timestamp)),  # observed Days per Month
-    Expected_Values = Days_Observed * 288,  # Expected: 288 per Day
+    Measured_Values = n(),  # measured values
+    Days_Observed = n_distinct(as.Date(Timestamp)),  # observed days per month
+    Expected_Values = Days_Observed * 288,  # Expected: 288 per day
     Missing_Values = Expected_Values - Measured_Values,
     Missing_Percentage = round((Missing_Values / Expected_Values) * 100, 2),
     .groups = "drop"
   )
 
-# show data set
+# Show data set
 glucose_monthly_summary
 ```
 
@@ -286,7 +286,7 @@ dup_timestamps <- cleaned_data_filtered %>%
 
 ```
 
-#### Identical/exact duplicates
+#### Identical/Exact Duplicates
 
 ```{r}
 exact_duplicates <- dup_timestamps %>%
@@ -297,7 +297,7 @@ exact_duplicates <- dup_timestamps %>%
 exact_duplicates
 ```
 
-#### Duplicates with same Serial.Number but different glucose value
+#### Duplicates with Same Serial.Number but Different Glucose Value
 
 ```{r}
 conflicting_duplicates <- dup_timestamps %>%
@@ -311,17 +311,16 @@ conflict_summary <- conflicting_duplicates %>%
 conflict_summary
 ```
 
-**Description:** Plotting those conflicting duplicates
+**Description:** Plotting those Conflicting Duplicates
 
 ```{r}
-# 1. laufende Nummerierung erstellen
 conflicting_duplicates <- conflicting_duplicates %>%
   group_by(ID, Timestamp, Serial.Number) %>%
   filter(n_distinct(`Glucose (mg/dl)`) > 1) %>%
   mutate(Glucose_Row = row_number()) %>%
   ungroup()
 
-# 2. In Wide-Format bringen (zwei Glucose-Werte nebeneinander)
+# wide-format
 conflicts_wide <- conflicting_duplicates %>%
   select(ID, Timestamp, Serial.Number, `Glucose (mg/dl)`, Glucose_Row) %>%
   pivot_wider(
@@ -331,7 +330,7 @@ conflicts_wide <- conflicting_duplicates %>%
   ) %>%
   filter(!is.na(Glucose_1) & !is.na(Glucose_2))
 
-# 3. Scatterplot: Glucose_1 vs Glucose_2
+# Scatterplot: Glucose_1 vs Glucose_2
 
 
 ggplot(conflicts_wide, aes(x = Glucose_1, y = Glucose_2, color = ID)) +
@@ -439,7 +438,7 @@ time_gaps_plot <- time_gaps %>%
   )
 ```
 
-#### Plotting those timegaps
+#### Plotting those Timegaps
 
 ```{r}
 ggplot(time_gaps_plot, aes(x = Timestamp)) +
@@ -496,23 +495,23 @@ serial_number_summary <- cleaned_data_filtered %>%
 serial_number_summary
 ```
 
-### Create Dataset without duplicates
+### Create Dataset without Duplicates
 
-**Description** Step 1: deduplicate: exact duplicates
+**Description:** deduplicate: exact Duplicates
 
 ```{r}
 cleaned_data_deduplicated <- cleaned_data_filtered %>%
   distinct(ID, Timestamp, Serial.Number, `Glucose (mg/dl)`, .keep_all = TRUE)
 ```
 
-**Description** Step 2: deduplicate: duplicates with same timestamp and glucose value but not same serial number
+**Description:** deduplicate: Duplicates with same Timestamp and Glucose Value but not same Serial Number
 
 ```{r}
 cleaned_data_deduplicated <- cleaned_data_deduplicated %>%
   distinct(ID, Timestamp, `Glucose (mg/dl)`, .keep_all = TRUE)
 ```
 
-**Description** Step 3: deduplicate: duplicates with same timestamp but different glucose value
+**Description:**  deduplicate: Duplicates with same Timestamp but Different Glucose Value
 
 ```{r}
 cleaned_data_deduplicated <- anti_join(
@@ -1220,7 +1219,7 @@ ggplot(cleaned_data_deduplicated, aes(x = Time_of_Day, y = `Glucose (mg/dl)`, fi
   labs(title = "Glucose Values: Day vs. Night",fill = "Time of Day" , x = "", y = "Glucose (mg/dl)")
 ```
 
-**Description:** Table for numbers of boxplot
+**Description:** Table for Numbers of Boxplot
 
 ```{r}
 glucose_summary_table <- cleaned_data_deduplicated %>%
@@ -1434,6 +1433,26 @@ ggplot(night_avg_5, aes(x = Minute5_Factor, y = Avg_Glucose_5, group = ID, color
     axis.text.x = element_text(angle = 45, hjust = 1),
     strip.text = element_text(face = "bold")
   ) 
+```
+```{r}
+ggplot(night_avg_5, aes(x = Minute5_Factor, y = Avg_Glucose_5, color = ID)) +
+  geom_smooth(aes(fill = ID), size = 0.7, se = TRUE, alpha = 0.2) +
+  geom_line(size = 0.5) +
+  scale_x_discrete(breaks = hour_labels) +
+  facet_wrap(~ ID) +
+  labs(
+    title = "Nighttime Glucose Trends per ID",
+    subtitle = "Hours from 22:00 to 06:00: 5min bins",
+    x = "Hour of Night",
+    y = "Average Glucose (mg/dl)",
+    color = "ID",
+    fill  = "ID"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(face = "bold")
+  )
 ```
 
 ### Create a double plot
@@ -4833,9 +4852,18 @@ test_dat <- dat_nights %>%
    facet_wrap(~ID)
  
 ```
+**Description:** Check how many Nights were Included into Analysis
+```{r}
+night_counts <- dat_nights %>%
+  dplyr::group_by(ID) %>%
+  dplyr::summarise(n_nights = dplyr::n_distinct(night_date),
+                   .groups = "drop")
+
+print(night_counts)
+```
 ### Wavelet
 **Description:** Wavelet Analysis
-```{r}
+```{r, warning=FALSE}
 # =========================================
 # GESAMT: Wavelet-Power (Morlet) + GWS, gepoolt über alle IDs × Nächte
 # =========================================
@@ -5067,4 +5095,52 @@ print(p_per_id)
 
 # optional: save
 ggsave("plots/wavelet_gws_per_id.png", p_per_id, width = 8, height = 5, dpi = 150)
+```
+```{r}
+# ---- 1) Pooled (all IDs × nights) ----
+fit_all <- suppressWarnings(
+  loess(mean_power ~ period,
+        data = gws_pooled_all, span = 0.22,
+        control = loess.control(surface = "direct"))
+)
+plot_all <- gws_pooled_all %>%
+  dplyr::arrange(period) %>%
+  dplyr::mutate(power_smooth = as.numeric(predict(fit_all)))
+
+idx_all <- find_peaks_simple(plot_all$period, plot_all$power_smooth,
+                             top_n = 3, min_sep = 12)
+pooled_peaks <- plot_all[idx_all, ] %>%
+  dplyr::arrange(dplyr::desc(power_smooth)) %>%
+  dplyr::mutate(peak_rank = dplyr::row_number()) %>%
+  dplyr::select(peak_rank, period, mean_power, power_smooth)
+```
+```{r}
+# ---- 2) Per ID (averaged over nights within ID) ----
+per_id_smoothed <- all_gws_pooled %>%
+  dplyr::arrange(ID, period) %>%
+  dplyr::group_by(ID) %>%
+  dplyr::mutate(
+    power_smooth = as.numeric(
+      predict(
+        suppressWarnings(
+          loess(mean_power ~ period, span = 0.22,
+                control = loess.control(surface = "direct"))
+        )
+      )
+    )
+  ) %>%
+  dplyr::ungroup()
+
+per_id_peaks <- per_id_smoothed %>%
+  dplyr::group_split(ID) %>%
+  purrr::map_dfr(~{
+    id  <- unique(.x$ID)
+    idx <- find_peaks_simple(.x$period, .x$power_smooth, top_n = 3, min_sep = 12)
+    if (!length(idx)) return(NULL)
+    .x[idx, ] %>%
+      dplyr::arrange(dplyr::desc(power_smooth)) %>%
+      dplyr::mutate(peak_rank = dplyr::row_number(), ID = id, .before = 1) %>%
+      dplyr::select(ID, peak_rank, period, mean_power, power_smooth)
+  })
+
 ```
