@@ -1,5 +1,5 @@
 ---
-title: "Masterarbeit"
+title: "Master Thesi Lina Becker"
 date: "`r Sys.Date()`"
 format:
   html:
@@ -9,8 +9,30 @@ format:
 editor: visual
 ---
 
-## Load Necessary Libraries
-
+## Install and Load Packages
+```{r}
+if (!requireNamespace("dplyr", quietly = TRUE)) {
+  install.packages("dplyr")
+}
+if (!requireNamespace("lubridate", quietly = TRUE)) {
+  install.packages("lubridate")
+}
+if (!requireNamespace("ggplot2", quietly = TRUE)) {
+  install.packages("ggplot2")
+}
+if (!requireNamespace("tidyr", quietly = TRUE)) {
+  install.packages("tidyr")
+}
+if (!requireNamespace("knitr", quietly = TRUE)) {
+  install.packages("knitr")
+}
+if (!requireNamespace("stringr", quietly = TRUE)) {
+  install.packages("stringr")
+}
+if (!requireNamespace("pheatmap", quietly = TRUE)) {
+  install.packages("pheatmap")
+}
+```
 ```{r}
 library(dplyr)
 library(lubridate)
@@ -1667,6 +1689,9 @@ print(min_row %>% select(Hour_Rounded, Fitted))
 **Description:** Load Cosinor Package
 
 ```{r}
+if (!requireNamespace("cosinor", quietly = TRUE)) {
+  install.packages("cosinor")
+}
 library(cosinor)
 ```
 
@@ -1682,7 +1707,7 @@ summary(fit)
 test_cosinor(fit, "X", param = "amp")
 summary(vitamind$Y)
 summary(predict(fit))
-library(ggplot2)
+
 ggplot_cosinor.lm(fit, x_str = "X")
 ```
 
@@ -3560,9 +3585,6 @@ glucose_fit_data <- glucose_fit_data %>%
 **Description:** Moving window with lm() and standard time
 
 ```{r}
-library(dplyr)
-library(lubridate)
-
 
 # Leere Liste für alle IDs
 all_results <- list()
@@ -3819,6 +3841,12 @@ moving_window_all_ids_dst <- moving_window_all_ids_dst %>%
 **Description:** Install and Load Packages
 
 ```{r}
+if (!requireNamespace("lme4", quietly = TRUE)) {
+  install.packages("lme4")
+}
+if (!requireNamespace("lmerTest", quietly = TRUE)) {
+  install.packages("lmerTest")
+}
   library(lme4)
   library(lmerTest)
 ```
@@ -3904,7 +3932,7 @@ emm_amp <- emmeans(model_amp_season, ~ Season)
 emm_amp <- as.data.frame(emm_amp)
 
 # Plot adjusted means with 95% CI
-library(ggplot2)
+
 ggplot(emm_amp, aes(x = Season, y = emmean)) +
   geom_point(size = 3, color = "darkgreen") +
   geom_errorbar(aes(ymin = emmean - SE * qt(0.975, df),
@@ -4086,8 +4114,7 @@ print(all_summary)
 #### Polar Plot of all IDs with Seasons
 
 ```{r}
-library(dplyr)
-library(ggplot2)
+
 
   # --- Feste Reihenfolge der IDs für Farben & vertikale Platzierung ---
 id_list <- sort(unique(moving_window_all_ids$ID))
@@ -4247,7 +4274,6 @@ moving_window_all_ids_dst <- moving_window_all_ids_dst %>%
 **Description:** Linear Mixed Model
 
 ```{r}
-library(lme4)
 
 model_photoperiod_acr <- lmer(
   Acrophase_Raw_Hours ~ photoperiod_hours + (1 | ID),
@@ -4260,6 +4286,9 @@ summary(model_photoperiod_acr)
 **Description:** Create a Graph
 
 ```{r}
+if (!requireNamespace("ggeffects", quietly = TRUE)) {
+  install.packages("ggeffects")
+}
 library(ggeffects)
 
 # Get predictions
@@ -4377,7 +4406,6 @@ summary(model_photoperiod_int)
 **Description:** Linear Mixed Model
 
 ```{r}
-library(lme4)
 
 model_photoperiod_acr_dst <- lmer(
   Acrophase_Raw_Hours ~ photoperiod_hours + (1 | ID),
@@ -4436,6 +4464,9 @@ summary(photoperiod_season_acr)
 ```
 
 ```{r}
+if (!requireNamespace("rlang", quietly = TRUE)) {
+  install.packages("rlang")
+}
 library(rlang)
 
 # Season-specific slopes of photoperiod for your model
@@ -4626,35 +4657,43 @@ mutate(
 ```
 
 ### Lomb-Scargle
+**Description:** Install and Load Packages
 ```{r}
+if (!requireNamespace("tibble", quietly = TRUE)) {
+  install.packages("tibble")
+}
+if (!requireNamespace("readr", quietly = TRUE)) {
+  install.packages("readr")
+}
+if (!requireNamespace("ggrepel", quietly = TRUE)) {
+  install.packages("ggrepel")
+}
 
-# --- Pakete -----------------------------------------------------------------
-pkgs <- c("dplyr","lubridate","ggrepel","purrr","tibble","readr","lomb","stringr","ggplot2")
-to_install <- pkgs[!sapply(pkgs, requireNamespace, quietly = TRUE)]
-if (length(to_install)) install.packages(to_install)
-invisible(lapply(pkgs, library, character.only = TRUE))
+library(tibble)
+library(readr)
+library(ggrepel)
 ``` 
-
+**Description:** Create the Function
 ```{r}
-# --- Parameter ---------------------------------------------------------------
-OFAC           <- 4          # gewünschte Oversampling-Faktor
-ROUND_MINUTES  <- FALSE      # TRUE = Perioden runden; FALSE = hohe Auflösung
-MIN_POINTS     <- 60         # Mindestanzahl Messpunkte pro Nacht
-MAX_PERIOD_MIN <- 180        # maximale Periode in Minuten
+# define parameters
+OFAC           <- 4          # oversampling factro
+ROUND_MINUTES  <- FALSE      
+MIN_POINTS     <- 60         # minimmum measurement points per night
+MAX_PERIOD_MIN <- 180        # maximum period
 
-# --- Korrigierte Lomb-Funktion (Perioden-Einheit = Minuten) ------------------
+# lomb function
 lomb_for_span <- function(df, max_period_min = 180, ofac = 4,
                           detrend = TRUE, round_minutes = FALSE) {
-  # Glukose-Spalte vereinheitlichen
+  # rename glucose column
   if ("Glucose (mg/dl)" %in% names(df)) df <- dplyr::rename(df, glucose = `Glucose (mg/dl)`)
   stopifnot(all(c("Timestamp","glucose") %in% names(df)))
   
-  # Zeit als POSIXct
+  # time as POSIXct
   if (!inherits(df$Timestamp, "POSIXct")) {
     df <- dplyr::mutate(df, Timestamp = as.POSIXct(Timestamp, tz = "Europe/Berlin"))
   }
   
-  # Säubern & Duplikate mitteln
+  # data cleaning
   df <- df %>%
     dplyr::filter(!is.na(Timestamp), !is.na(glucose)) %>%
     dplyr::arrange(Timestamp) %>%
@@ -4663,10 +4702,10 @@ lomb_for_span <- function(df, max_period_min = 180, ofac = 4,
   
   if (nrow(df) < 5) return(tibble(period_minutes = numeric(), power = numeric()))
   
-  # Zeitachse in MINUTEN seit Start
+  # time axis in minutes since start
   t_min <- as.numeric(df$Timestamp - df$Timestamp[1], units = "mins")
   
-  # optional detrend: entfernt Offset + linearen Trend
+  # detrend
   x <- df$glucose
   if (detrend) {
     x <- resid(lm(x ~ t_min))
@@ -4674,22 +4713,22 @@ lomb_for_span <- function(df, max_period_min = 180, ofac = 4,
     x <- x - mean(x, na.rm = TRUE)
   }
   
-  # Sampling-Schritt und sichere Untergrenze
+  # sampling steps and lower limit
   dt_min <- stats::median(diff(t_min), na.rm = TRUE)
-  min_period_min <- max(2 * dt_min, 10)  # Nyquist-sicher, mind. 10 min
+  min_period_min <- max(2 * dt_min, 10)  # Nyquist, minimum 10 min
   
-  # WICHTIG: type="period" → from/to sind PERIODEN (Minuten), passend zu times=t_min
+  #  type="period" 
   ls <- lomb::lsp(
     x     = x,
     times = t_min,
-    from  = min_period_min,     # Periode (min)
-    to    = max_period_min,     # Periode (min)
+    from  = min_period_min,     # period (min)
+    to    = max_period_min,     # period (min)
     type  = "period",
     ofac  = ofac,
     plot  = FALSE
   )
   
-  period_vec <- as.numeric(ls$scanned)  # bereits Minuten
+  period_vec <- as.numeric(ls$scanned)  
   if (round_minutes) period_vec <- round(period_vec)
   
   tibble(
@@ -4697,21 +4736,23 @@ lomb_for_span <- function(df, max_period_min = 180, ofac = 4,
     power          = ls$power
   ) %>% dplyr::arrange(period_minutes)
 }
-
-# --- Daten vorbereiten: nächtliche Segmente (22–06) --------------------------
+```
+**Description:** Prepare Data for Night
+```{r}
 dat <- cleaned_data_deduplicated %>%
   dplyr::mutate(Timestamp = as.POSIXct(Timestamp, tz = "Europe/Berlin"),
                 Hour = lubridate::hour(Timestamp)) %>%
   dplyr::filter(Hour >= 22 | Hour < 6) %>%
   dplyr::mutate(night_date = dplyr::if_else(Hour >= 22, as.Date(Timestamp), as.Date(Timestamp) - 1))
 
-# Nächte mit genügend Punkten behalten
+# Nkeep nights with enough data points
 dat_nights <- dat %>%
   dplyr::group_by(ID, night_date) %>%
   dplyr::filter(dplyr::n() >= MIN_POINTS) %>%
   dplyr::ungroup()
-
-# --- TEST: 1 ID × 2 Nächte (optional) ---------------------------------------
+```
+**Description:** Test for one ID and two Nights
+```{r}
 test_dat <- dat_nights %>%
  dplyr::filter(ID == unique(ID)[1],
                  night_date %in% head(unique(night_date), 2))
@@ -4721,8 +4762,9 @@ test_dat <- dat_nights %>%
                                       ofac = OFAC, detrend = TRUE,                                       round_minutes = ROUND_MINUTES)) %>%
    dplyr::ungroup()
  print(head(res_test, 10))
-
- # --- Batch: alle IDs × alle Nächte ------------------------------------------
+```
+**Description:** Compute for all IDs and Nights
+```{r}
  out_dir <- "lomb_per_person"
  if (!dir.exists(out_dir)) dir.create(out_dir)
  
@@ -4745,13 +4787,13 @@ test_dat <- dat_nights %>%
      next
    }
    
-   # Per-ID: gemitteltes Spektrum über Nächte
+   # Per-ID: mean spectrum per night
    summary_id <- res_by_night %>%
      dplyr::group_by(ID, period_minutes) %>%
      dplyr::summarise(mean_power = mean(power, na.rm = TRUE), .groups = "drop") %>%
      dplyr::arrange(period_minutes)
    
-   # Per-ID: Top-Peak je Nacht
+   # Per-ID: top peak per night
    peaks_id <- res_by_night %>%
      dplyr::group_by(ID, night_date) %>%
      dplyr::slice_max(order_by = power, n = 1, with_ties = FALSE) %>%
@@ -4764,7 +4806,7 @@ test_dat <- dat_nights %>%
            file = file.path(out_dir, paste0("lomb_ID_", id, ".rds")))
  }
  
- # --- Pooling-Variante 1: "jede Nacht zählt gleich" --------------------------
+ # every night has the same weight
  files <- list.files(out_dir, pattern = "^lomb_ID_.*\\.rds$", full.names = TRUE)
  all_results <- purrr::map_dfr(files, ~ readRDS(.x)$results)
  
@@ -4778,7 +4820,7 @@ test_dat <- dat_nights %>%
    dplyr::arrange(period_minutes)
 
  
- # --- Beispielplot für pooled_by_night ---------------------------------------
+ # plot pooled_by_night 
  fit <- loess(mean_power ~ period_minutes, data = pooled_by_night, span = 0.25)
  plot_df <- pooled_by_night %>% dplyr::mutate(power_smooth = as.numeric(predict(fit)))
  
@@ -4800,13 +4842,13 @@ test_dat <- dat_nights %>%
    theme_minimal()
  
  
- # --- Per-ID summaries (already stored in your .rds) --------------------------
+ # Per-ID summaries 
  all_summaries <- purrr::map_dfr(files, ~ {
    r <- readRDS(.x)$summary
    if (!is.null(r) && nrow(r) > 0) r else NULL
  })
  
- # --- Smoothing + peak detection per ID --------------------------------------
+ # Smoothing + peak detection per ID 
  lomb_per_id <- all_summaries %>%
    dplyr::group_by(ID) %>%
    dplyr::mutate(
@@ -4826,10 +4868,9 @@ test_dat <- dat_nights %>%
    dplyr::arrange(dplyr::desc(power_smooth)) %>%
    dplyr::slice_head(n = 3) %>%      # top 3 peaks per ID
    dplyr::ungroup()
- 
- # --- Plot faceted by ID ------------------------------------------------------
- 
- 
+```
+**Description:** Plot faceted by ID 
+```{r} 
  ggplot(lomb_per_id, aes(period_minutes, mean_power, color = ID)) +
    geom_line(alpha = 0.15) +
    geom_line(aes(y = power_smooth), linewidth = 1) +
@@ -4862,27 +4903,35 @@ night_counts <- dat_nights %>%
 print(night_counts)
 ```
 ### Wavelet
-**Description:** Wavelet Analysis
-```{r, warning=FALSE}
-# =========================================
-# GESAMT: Wavelet-Power (Morlet) + GWS, gepoolt über alle IDs × Nächte
-# =========================================
-
-# ------------------ Pakete & Parameter ------------------
-pkgs <- c("dplyr","lubridate","ggplot2","tibble","purrr","zoo","biwavelet",
-          "tidyr","stringr","gridExtra","viridis")
-to_install <- pkgs[!sapply(pkgs, requireNamespace, quietly = TRUE)]
-if (length(to_install)) install.packages(to_install)
-invisible(lapply(pkgs, library, character.only = TRUE))
-
-PER_MIN <- 10     # min. Periode (Minuten)
-PER_MAX <- 180    # max. Periode (Minuten)
-DJ      <- 1/12   # Skalenauflösung (kleiner = feiner)
+**Description:** Install and Load packages
+```{r}
+if (!requireNamespace("zoo", quietly = TRUE)) {
+  install.packages("zoo")
+}
+if (!requireNamespace("biwavelet", quietly = TRUE)) {
+  install.packages("biwavelet")
+}
+if (!requireNamespace("gridExtra", quietly = TRUE)) {
+  install.packages("gridExtra")
+}
+if (!requireNamespace("viridis", quietly = TRUE)) {
+  install.packages("viridis")
+}
+library(zoo)
+library(biwavelet)
+library(gridExtra)
+library(viridis)
+```
+**Description:** Helper Functions
+```{r, warning = FALSE}
+PER_MIN <- 10     # min. period
+PER_MAX <- 180    # max. period
+DJ      <- 1/12   # resolution
 STEP    <- 5      # Zielraster Minuten
-MINPTS  <- 60     # mind. Messpunkte/Nacht (≈5h bei 5-min Raster)
+MINPTS  <- 60     # min measurement points
 
-# ------------------ Hilfsfunktionen ------------------
-# 1) Nacht vorbereiten: 5-min Raster, Interpolation, t_min, detrend + center
+
+# prepare night: 5-min frame, interpolation, t_min, detrend + center
 prep_night_series <- function(df, tz = "Europe/Berlin", step_min = STEP,
                               detrend = TRUE, center = TRUE) {
   if ("Glucose (mg/dl)" %in% names(df)) df <- dplyr::rename(df, glucose = `Glucose (mg/dl)`)
@@ -4904,7 +4953,7 @@ prep_night_series <- function(df, tz = "Europe/Berlin", step_min = STEP,
   list(df = x, y = y)
 }
 
-# 2) Wavelet (biwavelet::wt), Perioden in Minuten
+# Wavelet (biwavelet::wt), periods in minutes
 wavelet_for_night <- function(t_min, y, period_min = PER_MIN, period_max = PER_MAX,
                               dj = DJ, mother = "morlet") {
   dat <- cbind(t = t_min, y = y)
@@ -4913,7 +4962,7 @@ wavelet_for_night <- function(t_min, y, period_min = PER_MIN, period_max = PER_M
   biwavelet::wt(dat, dj = dj, s0 = s0, J1 = J1, mother = mother)
 }
 
-# 3) GWS (Global Wavelet Spectrum) innerhalb COI
+# GWS (Global Wavelet Spectrum) inside COI
 gws_from_wt <- function(wt, per_min = PER_MIN, per_max = PER_MAX) {
   period <- wt$period; coi <- wt$coi; P <- wt$power
   inside <- outer(period, coi, function(p, c) p <= c)
@@ -4923,7 +4972,7 @@ gws_from_wt <- function(wt, per_min = PER_MIN, per_max = PER_MAX) {
     dplyr::filter(dplyr::between(period, per_min, per_max))
 }
 
-# 4) Peak-Finder (auf geglätteter Kurve)
+# Peak-finder 
 find_peaks_simple <- function(x, y, top_n = 3, min_sep = 12) {
   idx <- which(diff(sign(diff(y))) == -2) + 1
   idx <- idx[is.finite(y[idx])]
@@ -4936,8 +4985,9 @@ find_peaks_simple <- function(x, y, top_n = 3, min_sep = 12) {
   }
   sel
 }
-
-# ------------------ Daten → Nächte ------------------
+```
+**Description:** Dates to Nights
+```{r, warning = FALSE}
 stopifnot(exists("cleaned_data_deduplicated"))
 dat <- cleaned_data_deduplicated %>%
   dplyr::mutate(
@@ -4952,7 +5002,7 @@ dat_nights <- dat %>%
   dplyr::filter(dplyr::n() >= MINPTS) %>%
   dplyr::ungroup()
 
-# ------------------ pro ID: GWS speichern ------------------
+# save GWS per ID
 out_dir <- "wavelet_per_person"
 if (!dir.exists(out_dir)) dir.create(out_dir)
 
@@ -4985,8 +5035,9 @@ for (id in all_ids) {
   saveRDS(list(gws_nights = gws_id, gws_pooled = gws_pooled),
           file = file.path(out_dir, paste0("wavelet_ID_", id, ".rds")))
 }
-
-# ------------------ Aggregation über alle IDs × Nächte ------------------
+```
+**Description:** Aggregation across all IDs and Nights
+```{r, warning = FALSE}
 files <- list.files(out_dir, pattern = "^wavelet_ID_.*\\.rds$", full.names = TRUE)
 all_gws_nights <- purrr::map_dfr(files, ~ readRDS(.x)$gws_nights)
 all_gws_pooled <- purrr::map_dfr(files, ~ readRDS(.x)$gws_pooled)
@@ -4997,9 +5048,11 @@ gws_pooled_all <- all_gws_nights %>%
                    n_nights   = dplyr::n_distinct(paste(ID, night_date)),
                    .groups = "drop") %>%
   dplyr::arrange(period)
+```
+**Description:** Pooled Heatmap and GWS
+```{r, warning = FALSE}
 
-# ------------------ GEPOOLTE HEATMAP (links) + GWS (rechts) ------------------
-# 1) Alle Nächte erneut als Wavelet → pooled Heatmap innerhalb COI
+# nights as GWS → pooled Heatmap inside COI
 wt_list <- list()
 for (g in dat_nights %>% dplyr::group_split(ID, night_date)) {
   prep <- tryCatch(prep_night_series(g), error = function(e) NULL)
@@ -5051,7 +5104,7 @@ p_left <- ggplot(df_pool, aes(time, period, fill = power)) +
        x = "Minuten seit Nachtbeginn", y = "Periode (Minuten)") +
   theme_minimal()
 
-# 2) Global Wavelet Spectrum (rechts) – geglättet + Peaks
+# Global Wavelet Spectrum , smoothed + Peaks
 fit_all <- loess(mean_power ~ period, data = gws_pooled_all, span = 0.22)
 plot_all <- gws_pooled_all %>%
   dplyr::mutate(power_smooth = as.numeric(predict(fit_all)))
@@ -5070,19 +5123,16 @@ p_right <- ggplot(plot_all, aes(period, mean_power)) +
        x = "Periode (Minuten)", y = "Mean Power") +
   theme_minimal()
 
-# 3) zusammen anzeigen & speichern
+# show and save
 gridExtra::grid.arrange(p_left, p_right, ncol = 2)
 dir.create("plots", showWarnings = FALSE)
 ggsave("plots/wavelet_pooled_heatmap_gws.png",
        gridExtra::arrangeGrob(p_left, p_right, ncol = 2),
        width = 12, height = 6, dpi = 150)
 
-# =========================================
-# Ende
-# =========================================
 ```
+**Description:** Plot GWS per ID
 ```{r}
-# ------------------ Extra Plot: GWS pro ID ------------------
 p_per_id <- ggplot(all_gws_pooled, aes(period, mean_power, color = ID)) +
   geom_line(alpha = 0.9) +
   scale_x_continuous(breaks = seq(PER_MIN, PER_MAX, by = 10)) +
@@ -5093,7 +5143,7 @@ p_per_id <- ggplot(all_gws_pooled, aes(period, mean_power, color = ID)) +
 
 print(p_per_id)
 
-# optional: save
+#  save
 ggsave("plots/wavelet_gws_per_id.png", p_per_id, width = 8, height = 5, dpi = 150)
 ```
 ```{r}
