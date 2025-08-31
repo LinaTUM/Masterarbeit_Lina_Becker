@@ -1,5 +1,5 @@
 ---
-title: "Master Thesi Lina Becker"
+title: "Master Thesis Lina Becker"
 date: "`r Sys.Date()`"
 format:
   html:
@@ -158,7 +158,7 @@ ggplot(glucose_data, aes(x = Timestamp)) +
     title = "Glucose Measurements Over Time by Participant",
     subtitle = "Blue = Historic Glucose (5 min), Red = Scan Glucose (Manual Scan)",
     x = "Time",
-    y = "Glucose Level (mg/dL)"
+    y = "Glucose Level (mg/dl)"
   ) +
   theme_minimal() +
   theme(
@@ -895,7 +895,52 @@ ggplot(donut_data, aes(x = 2, y = Percentage, fill = Glucose_Category)) +
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
+**Description:** Stacked Chart with Scientific Colour Palette
+```{r}
+if (!requireNamespace("scico", quietly = TRUE)) {
+  install.packages("scico")
+}
 
+library(scico)
+```
+```{r}
+# category levels
+cats <- c("High","Normal","Low", "Very Low")
+
+# discrete colours from Scientific colour map 
+pal <- setNames(scico(length(cats), palette = "vik"), cats)
+
+
+# build data 
+stacked_chart <- cleaned_data_deduplicated %>%
+  filter(!is.na(Glucose_Category)) %>%
+  mutate(
+    Time = floor_date(Timestamp, "5 minutes"),
+    TimeOnly = format(Time, "%H:%M:%S"),
+    TimeOnly_POSIX = as.POSIXct(TimeOnly, format = "%H:%M:%S", tz = "UTC")
+  ) %>%
+  count(ID, TimeOnly_POSIX, Glucose_Category) %>%
+  group_by(ID, TimeOnly_POSIX) %>%
+  mutate(percentage = n / sum(n)) %>%
+  ungroup() %>%
+  complete(ID, TimeOnly_POSIX, Glucose_Category,
+           fill = list(n = 0, percentage = 0)) %>%
+  mutate(
+    Glucose_Category = factor(Glucose_Category, levels = cats)
+  ) %>%
+  arrange(ID, TimeOnly_POSIX, Glucose_Category)  # ensure proper draw order
+
+# plot with discrete Scientific colours
+ggplot(stacked_chart,
+       aes(x = TimeOnly_POSIX, y = percentage, fill = Glucose_Category)) +
+  geom_area() +                                   # default is stacked
+  scale_fill_manual(values = pal, drop = FALSE) + # DISCRETE palette
+  scale_x_datetime(date_labels = "%H:%M") +
+  facet_wrap(~ ID, ncol = 2) +
+  labs(x = "Time", y = "Percentage", fill = "Glucose Category") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
 ### Improved visualization of High, Low and Very Low
 
 **Description:** Facet per Category and ID
@@ -943,7 +988,24 @@ stacked_chart_25 <- stacked_chart %>%
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 ```
+**Description:** Show 25% with Scientific Colour Map
+```{r}
+stacked_chart_25 <- stacked_chart %>%
+  mutate(
+    Glucose_Category = factor(Glucose_Category, levels = c("Normal", "High", "Low", "Very Low")))
 
+ggplot(stacked_chart_25, 
+       aes(x = TimeOnly_POSIX, y = percentage, fill = Glucose_Category)) +
+  geom_area() +
+  scale_fill_manual(values = pal, drop = FALSE)+
+  scale_x_datetime(date_labels = "%H:%M") +
+  coord_cartesian(ylim = c(0, 0.25)) +  # only show until 25%
+  facet_wrap(~ ID, ncol = 2) +  
+  labs(y = "Proportion", x = "Time of Day") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+```
 ## Spike Analysis
 
 ### Category Change
@@ -1456,26 +1518,7 @@ ggplot(night_avg_5, aes(x = Minute5_Factor, y = Avg_Glucose_5, group = ID, color
     strip.text = element_text(face = "bold")
   ) 
 ```
-```{r}
-ggplot(night_avg_5, aes(x = Minute5_Factor, y = Avg_Glucose_5, color = ID)) +
-  geom_smooth(aes(fill = ID), size = 0.7, se = TRUE, alpha = 0.2) +
-  geom_line(size = 0.5) +
-  scale_x_discrete(breaks = hour_labels) +
-  facet_wrap(~ ID) +
-  labs(
-    title = "Nighttime Glucose Trends per ID",
-    subtitle = "Hours from 22:00 to 06:00: 5min bins",
-    x = "Hour of Night",
-    y = "Average Glucose (mg/dl)",
-    color = "ID",
-    fill  = "ID"
-  ) +
-  theme_minimal() +
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1),
-    strip.text = element_text(face = "bold")
-  )
-```
+
 
 ### Create a double plot
 
