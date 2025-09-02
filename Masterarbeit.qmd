@@ -1,5 +1,5 @@
 ---
-title: "Master Thesis Lina Becker"
+title: "Master Thesis Lina Becker: Detection of Nocturnal Rhythms and Seasonal Variations in Human Glucose Levels"
 date: "`r Sys.Date()`"
 format:
   html:
@@ -1716,12 +1716,12 @@ ggplot(fit_data_112, aes(x = Hour_Rounded)) +
 
 
 
-# Maximum bestimmen
+# Maximum 
 max_row <- fit_data_102 %>% filter(Fitted == max(Fitted))
 cat("Maximum:\n")
 print(max_row %>% select(Hour_Rounded, Fitted))
 
-# Minimum bestimmen
+# Minimum
 min_row <- fit_data_102 %>% filter(Fitted == min(Fitted))
 cat("\nMinimum:\n")
 print(min_row %>% select(Hour_Rounded, Fitted))
@@ -1915,7 +1915,7 @@ cos_fit_102_orig <- nls(
   start = list(A = 10, phi = 0, C = 100)  # start values
 )
 
-# Ergebnis anzeigen
+# result
 summary(cos_fit_102_orig)
 
 # prepare dataset for plotting
@@ -1941,7 +1941,7 @@ cos_fit_104_orig <- nls(
   start = list(A = 10, phi = 0, C = 100)  # start values
 )
 
-# Ergebnis anzeigen
+# result
 summary(cos_fit_104_orig)
 
 # prepare dataset for plotting
@@ -1967,7 +1967,7 @@ cos_fit_107_orig <- nls(
   start = list(A = 10, phi = 0, C = 100)  # start values
 )
 
-# Ergebnis anzeigen
+# result
 summary(cos_fit_107_orig)
 
 # prepare dataset for plotting
@@ -1993,7 +1993,7 @@ cos_fit_108_orig <- nls(
   start = list(A = 10, phi = 0, C = 100)  # start values
 )
 
-# Ergebnis anzeigen
+# result
 summary(cos_fit_108_orig)
 
 # prepare dataset for plotting
@@ -2019,7 +2019,7 @@ cos_fit_109_orig <- nls(
   start = list(A = 10, phi = 0, C = 100)  # start values
 )
 
-# Ergebnis anzeigen
+# result
 summary(cos_fit_109_orig)
 
 # prepare dataset for plotting
@@ -2045,7 +2045,7 @@ cos_fit_112_orig <- nls(
   start = list(A = 10, phi = 0, C = 100)  # start values
 )
 
-# Ergebnis anzeigen
+# result
 summary(cos_fit_112_orig)
 
 # prepare dataset for plotting
@@ -2103,20 +2103,20 @@ summary(cos_fit_112_orig)
 ### Trouble Shooting: Cosine Fit
 
 ```{r}
-# 1. Zeitreihe erzeugen
+# 1. time grid
 datetime <- seq(
   from = as.POSIXct("2025-01-01 00:00:00"),
   to = as.POSIXct("2025-01-07 23:30:00"),
   by = "30 min"
 )
 
-# 2. Dezimalzeit für 24h-Periode
+# 2. dectime for 24h-Period
 dec.time <- as.numeric(format(datetime, "%H")) + as.numeric(format(datetime, "%M")) / 60
 
-# 3. Cosinus mit 24h-Periode, Maximum um 18 Uhr
+# 3. Cosine with 24h-Period, Maximum at 18:00
 mesor <- 100
 amplitude <- 20
-phase_shift <- pi/2  # Maximum bei 18 Uhr
+phase_shift <- pi/2  
 
 glucose <- mesor + amplitude * cos(2 * pi * dec.time / 24 + phase_shift)
 
@@ -2127,14 +2127,14 @@ synthetic_24h <- data.frame(datetime, dec.time, glucose)
 ggplot(synthetic_24h, aes(x = datetime, y = glucose)) +
   geom_line(color = "darkorange3") +
   labs(
-    title = "Synthetic Glucose Curve (Min at 6:00 , Max bei 18:00)",
+    title = "Synthetic Glucose Curve (Min at 6:00 , Max at 18:00)",
     y = "Glucose (mg/dl)", x = "Time (days)"
   ) +
   theme_minimal()
 
 
 
-# 5. Cosinor-Komponenten
+# 5. Cosinor-Components
 synthetic_24h <- synthetic_24h %>%
   mutate(
     cos_part = cos(2 * pi * dec.time / 24),
@@ -2143,7 +2143,7 @@ synthetic_24h <- synthetic_24h %>%
 
 
 
-### ----- Manueller lm-Fit -----
+### ----- Manuel lm-Fit -----
 fit_lm <- lm(glucose ~ cos_part + sin_part, data = synthetic_24h)
 coefs_lm <- coef(fit_lm)
 
@@ -2190,9 +2190,9 @@ summary_df <- data.frame(
   MinTime_Hours_cos = min_time_cos
 )
 
-######################## das ganze für den Datensatz der ID 102 ausprobieren
+######################## try this for 102
 
-# Daten für Patient ID 102 vorbereiten
+
 glucose_fit_102_data <- cleaned_data_deduplicated %>%
   filter(ID == "102") %>% 
   mutate(
@@ -2200,14 +2200,14 @@ glucose_fit_102_data <- cleaned_data_deduplicated %>%
     dec.time = hour(datetime) + minute(datetime) / 60
   )
 
-# 5. Cosinor-Komponenten
+# 5. Cosinor-components
 glucose_fit_102_data <- glucose_fit_102_data %>%
   mutate(
     cos_part = cos(2 * pi * dec.time / 24),
     sin_part = sin(2 * pi * dec.time / 24)
   )
 
-### ----- Manueller lm-Fit -----
+### ----- Manual lm-Fit -----
 fit_lm <- lm(`Glucose (mg/dl)` ~ cos_part + sin_part, data = glucose_fit_102_data)
 coefs_lm <- coef(fit_lm)
 
@@ -2228,18 +2228,18 @@ coefs_cos <- coef(fit_cos, transformed = TRUE)
 intercept_cos <- coefs_cos["(Intercept)"]
 amp_cos <- coefs_cos["amp"]
 acr_rad_cos <- coefs_cos["acr"]
-acr_hr_cos <- (acr_rad_cos * 24 / (2 * pi)) %% 24  # Konsistent: %% 24 hier anwenden
+acr_hr_cos <- (acr_rad_cos * 24 / (2 * pi)) %% 24 
 max_time_cos <- acr_hr_cos
 min_time_cos <- (acr_hr_cos + 12) %% 24
 
-### ----- Zusammenfassung in DataFrame -----
+### ----- DataFrame -----
 summary_df_102 <- data.frame(
   Patient_ID = "102",
   Window_Start = min(glucose_fit_102_data$datetime, na.rm = TRUE),
   Window_End = max(glucose_fit_102_data$datetime, na.rm = TRUE),
   N_Observations = nrow(glucose_fit_102_data),
   
-  # manuelles Modell
+  # manual Modell
   Intercept_lm = intercept_l,
   Amp_lm = amp_l,
   Acrophase_Rad_lm = acr_rad_l,
@@ -2873,7 +2873,7 @@ ggplot(moving_window_102, aes(x = Window_Start)) +
 **Description:** Data Set for Comparison of cosinor.lm() and lm() method
 
 ```{r}
- # Leerer DataFrame zur Speicherung
+ # empty data frame
 moving_window_comparison <- data.frame(
   Window_Start = as.POSIXct(character()),
   Amp_C = numeric(),
@@ -2885,11 +2885,11 @@ moving_window_comparison <- data.frame(
   stringsAsFactors = FALSE
 )
 
-# Zeitgrenzen
+# satrt and end
 start_time_mv_102 <- min(glucose_fit_102_data$datetime)
 end_time_mv_102   <- max(glucose_fit_102_data$datetime)
 
-# Fenster und Schritt
+# Fwindow and steps
 window_length <- days(3)
 step_size <- days(1)
 current_start_102 <- start_time_mv_102
@@ -2899,7 +2899,7 @@ while (current_start_102 + window_length <= end_time_mv_102) {
   
   current_end_102 <- current_start_102 + window_length
   
-  # Daten filtern
+  # filter data
   window_data_102_comparison <- glucose_fit_102_data %>%
     filter(datetime >= current_start_102 & datetime < current_end_102)
   
@@ -2908,12 +2908,12 @@ while (current_start_102 + window_length <= end_time_mv_102) {
     next
   }
   
-  # Cosinor-Teile berechnen
+  # Cosinor-paramters
   dec_time <- window_data_102_comparison$dec.time
   window_data_102_comparison$cos_part <- cos(2 * pi * dec_time / 24)
   window_data_102_comparison$sin_part <- sin(2 * pi * dec_time / 24)
   
-  # Lineares Modell
+  # Linear model
   fit_test <- tryCatch({
     lm(`Glucose (mg/dl)` ~ cos_part + sin_part, data = window_data_102_comparison)
   }, error = function(e) NA)
@@ -2936,7 +2936,7 @@ while (current_start_102 + window_length <= end_time_mv_102) {
   amp_L      <- sqrt(beta_102^2 + gamma_102^2)
   acr_L_rad  <- atan2(gamma_102, beta_102)
   
-  # Cosinor-Paketmodell
+  # Cosinor
   fit_102 <- tryCatch({
     cosinor.lm(`Glucose (mg/dl)` ~ time(dec.time), 
                data = window_data_102_comparison, 
@@ -2960,7 +2960,7 @@ while (current_start_102 + window_length <= end_time_mv_102) {
       next
     }
     
-    # Ergebnisse speichern
+    # results
     moving_window_comparison <- rbind(moving_window_comparison, data.frame(
       Window_Start = current_start_102,
       Amp_C = amp_C,
@@ -3629,27 +3629,27 @@ glucose_fit_data <- glucose_fit_data %>%
 
 ```{r}
 
-# Leere Liste für alle IDs
+# empty list for all IDs
 all_results <- list()
 
-# Alle IDs extrahieren
+# extract all ids
 ids <- unique(glucose_fit_data$ID)
 
-# Fenster-Parameter
+# window paramters
 window_length <- days(3)
 step_size <- days(1)
 
-# Schleife über alle IDs
+# loop for all ids
 for (id in ids) {
   
-  # Daten für aktuelle ID
+  # data for current id
   glucose_id_data <- glucose_fit_data %>%
     filter(ID == id)
   
-  # Prüfe, ob genug Daten da sind
+  # check if enough data
   if (nrow(glucose_id_data) < 400) next
   
-  # Zeitgrenzent
+  # end and start time
   start_time <- min(glucose_id_data$datetime_std,na.rm = TRUE)
   end_time   <- max(glucose_id_data$datetime_std,na.rm = TRUE)
   
@@ -3661,11 +3661,11 @@ for (id in ids) {
     
     current_end <- current_start + window_length
     
-    # Daten im Fenster
+   # Data in window
     window_data <- glucose_id_data %>%
       filter(datetime_std >= current_start & datetime_std < current_end)
     
-    # Skip bei zu wenigen Datenpunkten
+    # Skip if not enough data points
     if (nrow(window_data) < 400) {
       current_start <- current_start + step_size
       next
@@ -3681,7 +3681,7 @@ for (id in ids) {
       lm(`Glucose (mg/dl)` ~ cos_part + sin_part, data = window_data)
     }, error = function(e) NA)
     
-    # Falls Fit nicht funktioniert
+    # if fit not functioning
     if (!inherits(fit, "lm")) {
       current_start <- current_start + step_size
       next
@@ -3689,13 +3689,13 @@ for (id in ids) {
     
     coefs <- coef(fit)
     
-    # Falls NA in Koeffizienten
+    # if NA in coefficients
     if (any(is.na(coefs[c("(Intercept)", "cos_part", "sin_part")]))) {
       current_start <- current_start + step_size
       next
     }
     
-    # Extrahiere Parameter
+    # Extracte Parameters
     intercept <- coefs["(Intercept)"]
     beta      <- coefs["cos_part"]
     gamma     <- coefs["sin_part"]
@@ -3707,7 +3707,7 @@ for (id in ids) {
     max_time <- acrophase_norm
     min_time <- (acrophase_norm + 12) %% 24
     
-    # Ergebnisse speichern
+    # save results
     id_results[[length(id_results) + 1]] <- data.frame(
       ID = id,
       Window_Start = current_start,
@@ -3720,20 +3720,20 @@ for (id in ids) {
       Intercept = intercept
     )
     
-    # Nächstes Fenster
+    # Next window
     current_start <- current_start + step_size
   }
   
-  # Ergebnisse der aktuellen ID speichern
+  # save results of current id
   if (length(id_results) > 0) {
     all_results[[length(all_results) + 1]] <- do.call(rbind, id_results)
   }
 }
 
-# Kombiniere alle Ergebnisse in ein DataFrame
+# combine alls results in  DataFrame
 moving_window_all_ids <- do.call(rbind, all_results)
 
-# Optional: Ergebnisse ansehen
+
 head(moving_window_all_ids)
 ```
 
@@ -3741,31 +3741,31 @@ head(moving_window_all_ids)
 
 ```{r}
 
-# Leere Liste für alle IDs
+# empty list for all IDs
 all_results <- list()
 
-# Alle IDs extrahieren
+# extract all ids
 ids <- unique(glucose_fit_data$ID)
 
-# Fenster-Parameter
+# window paramters
 window_length <- days(3)
 step_size <- days(1)
 
-# Schleife über alle IDs
+# loop for all ids
 for (id in ids) {
   
-  # Daten für aktuelle ID
+  # data for current id
   glucose_id_data <- glucose_fit_data %>%
     filter(ID == id)
   
-  # Prüfe, ob genug Daten da sind
+  # check if enough data
   if (nrow(glucose_id_data) < 400) next
   
-  # Zeitgrenzent
+  # end and start time
   start_time <- min(glucose_id_data$datetime,na.rm = TRUE)
   end_time   <- max(glucose_id_data$datetime,na.rm = TRUE)
   
-  # Starte Sliding Window
+  # Start Sliding Window
   current_start <- start_time
   id_results <- list()  # save per ID
   
@@ -3773,11 +3773,11 @@ for (id in ids) {
     
     current_end <- current_start + window_length
     
-    # Daten im Fenster
+    # Data in window
     window_data <- glucose_id_data %>%
       filter(datetime >= current_start & datetime < current_end)
     
-    # Skip bei zu wenigen Datenpunkten
+    # Skip if not enough data points
     if (nrow(window_data) < 400) {
       current_start <- current_start + step_size
       next
@@ -3793,7 +3793,7 @@ for (id in ids) {
       lm(`Glucose (mg/dl)` ~ cos_part + sin_part, data = window_data)
     }, error = function(e) NA)
     
-    # Falls Fit nicht funktioniert
+    # if fit not functioning
     if (!inherits(fit, "lm")) {
       current_start <- current_start + step_size
       next
@@ -3801,13 +3801,13 @@ for (id in ids) {
     
     coefs <- coef(fit)
     
-    # Falls NA in Koeffizienten
+    # NA in coefficients
     if (any(is.na(coefs[c("(Intercept)", "cos_part", "sin_part")]))) {
       current_start <- current_start + step_size
       next
     }
     
-    # Extrahiere Parameter
+    # Extract Parameters
     intercept <- coefs["(Intercept)"]
     beta      <- coefs["cos_part"]
     gamma     <- coefs["sin_part"]
@@ -3819,7 +3819,7 @@ for (id in ids) {
     max_time <- acrophase_norm
     min_time <- (acrophase_norm + 12) %% 24
     
-    # Ergebnisse speichern
+    # save results
     id_results[[length(id_results) + 1]] <- data.frame(
       ID = id,
       Window_Start = current_start,
@@ -3832,20 +3832,20 @@ for (id in ids) {
       Intercept = intercept
     )
     
-    # Nächstes Fenster
+    # Next window
     current_start <- current_start + step_size
   }
   
-  # Ergebnisse der aktuellen ID speichern
+  # save results of current id
   if (length(id_results) > 0) {
     all_results[[length(all_results) + 1]] <- do.call(rbind, id_results)
   }
 }
 
-# Kombiniere alle Ergebnisse in ein DataFrame
+# combine all results in DataFrame
 moving_window_all_ids_dst <- do.call(rbind, all_results)
 
-# Optional: Ergebnisse ansehen
+
 head(moving_window_all_ids_dst)
 ```
 
@@ -4159,10 +4159,10 @@ print(all_summary)
 ```{r}
 
 
-  # --- Feste Reihenfolge der IDs für Farben & vertikale Platzierung ---
+  # ------ Fixed ID order for colors & vertical placement ---
 id_list <- sort(unique(moving_window_all_ids$ID))
 
-# --- Zusammenfassung: Durchschnitt & SD des Maxima pro Season & ID ---
+# --- Summary: mean & SD of maxima per season & ID ---
 season_summary <- moving_window_all_ids %>%
   group_by(ID, Season) %>%
   summarise(
@@ -4175,20 +4175,20 @@ season_summary <- moving_window_all_ids %>%
     xmin = avg_max_rad - sd_max_rad,
     xmax = avg_max_rad + sd_max_rad,
     ID = factor(ID, levels = id_list),
-    # dynamische vertikale Positionen, um Überlappung zu vermeiden
+    # dynamic vertical positions to avoid overlap
     rect_ymin = 0.95 - 0.05 * (as.numeric(ID) - 1),
     rect_ymax = rect_ymin + 0.05
   )
 
-# --- Zeiger-Daten extrahieren ---
+# --- extract pointers ---
 pointers_seasons <- season_summary %>%
   select(ID, Season, angle)
 
-# --- Rechteck-Daten extrahieren ---
+# --- extract rects ---
 rects_seasons <- season_summary %>%
   select(ID, Season, xmin, xmax, rect_ymin, rect_ymax)
 
-# --- Plot erstellen ---
+# --- Plot---
 ggplot() +
   geom_rect(data = rects_seasons,
             aes(xmin = xmin, xmax = xmax, ymin = rect_ymin, ymax = rect_ymax, fill = ID),
@@ -4880,8 +4880,8 @@ test_dat <- dat_nights %>%
              vjust = -0.8) +
    scale_x_continuous(breaks = seq(10, max(plot_df$period_minutes, na.rm = TRUE), by = 10)) +
    labs(title = "Pooled Lomb–Scargle Spectrum (per night)",
-        subtitle = "jede Nacht gleich gewichtet · ofac = 4",
-        x = "Periode (Minuten)", y = "Mean Power") +
+        subtitle = "each night weighted equally · ofac = 4",
+        x = "Period (Minutes)", y = "Mean Power") +
    theme_minimal()
  
  
@@ -4930,7 +4930,7 @@ test_dat <- dat_nights %>%
    theme(axis.text.x = element_text(angle = 45, hjust = 1))+
    labs(
      title = "Lomb-Scargle Spectrum per ID",
-     x = "Periode (Minuten)", y = "Mean Power"
+     x = "Period (Minutes)", y = "Mean Power"
    ) +
    theme_minimal() +
    facet_wrap(~ID)
@@ -4970,7 +4970,7 @@ library(viridis)
 PER_MIN <- 10     # min. period
 PER_MAX <- 180    # max. period
 DJ      <- 1/12   # resolution
-STEP    <- 5      # Zielraster Minuten
+STEP    <- 5      # grid in min
 MINPTS  <- 60     # min measurement points
 
 
@@ -5142,9 +5142,9 @@ p_left <- ggplot(df_pool, aes(time, period, fill = power)) +
               inherit.aes = FALSE, fill = "grey90", alpha = 0.65) +
   scale_fill_viridis(name = "Power", option = "C", na.value = NA) +
   scale_y_reverse(expand = c(0,0)) +
-  labs(title = "Wavelet Power (Morlet) – gepoolt (alle IDs × Nächte)",
-       subtitle = "grau = außerhalb der COI (unsicher)",
-       x = "Minuten seit Nachtbeginn", y = "Periode (Minuten)") +
+  labs(title = "Wavelet Power (Morlet) – pooled (all IDs × Nights)",
+       subtitle = "grey = outside COI (unreliable)",
+       x = "Minutes since Start of Night", y = "Period (Minutes)") +
   theme_minimal()
 
 # Global Wavelet Spectrum , smoothed + Peaks
@@ -5161,9 +5161,9 @@ p_right <- ggplot(plot_all, aes(period, mean_power)) +
   geom_point(data = pk_all, aes(y = power_smooth), size = 2) +
   geom_text(data = pk_all, aes(y = power_smooth, label = label), vjust = -0.8) +
   scale_x_continuous(breaks = seq(PER_MIN, PER_MAX, by = 10)) +
-  labs(title = "Global Wavelet Spectrum – pooled (alle IDs × Nächte)",
-       subtitle = "jede Nacht gleich gewichtet · nur innerhalb COI",
-       x = "Periode (Minuten)", y = "Mean Power") +
+  labs(title = "Global Wavelet Spectrum – pooled (all IDs × Nights)",
+       subtitle = "every night weighted equally · inside COI",
+       x = "Period (Minutes)", y = "Mean Power") +
   theme_minimal()
 
 # show and save
@@ -5179,9 +5179,9 @@ ggsave("plots/wavelet_pooled_heatmap_gws.png",
 p_per_id <- ggplot(all_gws_pooled, aes(period, mean_power, color = ID)) +
   geom_line(alpha = 0.9) +
   scale_x_continuous(breaks = seq(PER_MIN, PER_MAX, by = 10)) +
-  labs(title = "Global Wavelet Spectrum – pro ID (über Nächte gemittelt)",
-       subtitle = "jede Nacht gleich gewichtet",
-       x = "Periode (Minuten)", y = "Mean Power") +
+  labs(title = "Global Wavelet Spectrum – per ID (polled across nights)",
+       subtitle = "every night weighted equally",
+       x = "Period (Minutes)", y = "Mean Power") +
   theme_minimal()
 
 print(p_per_id)

@@ -6,9 +6,9 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="dcterms.date" content="2025-08-31">
+<meta name="dcterms.date" content="2025-09-02">
 
-<title>Master Thesis Lina Becker</title>
+<title>Master Thesis Lina Becker: Detection of Nocturnal Rhythms and Seasonal Variations in Human Glucose Levels</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -172,7 +172,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Master Thesis Lina Becker</h1>
+<h1 class="title">Master Thesis Lina Becker: Detection of Nocturnal Rhythms and Seasonal Variations in Human Glucose Levels</h1>
 </div>
 
 
@@ -183,7 +183,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">August 31, 2025</p>
+      <p class="date">September 2, 2025</p>
     </div>
   </div>
   
@@ -3053,7 +3053,7 @@ Achieved convergence tolerance: 7.629e-06</code></pre>
 </figure>
 </div>
 </div>
-<div class="sourceCode cell-code" id="cb126"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb126-1"><a href="#cb126-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Maximum bestimmen</span></span>
+<div class="sourceCode cell-code" id="cb126"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb126-1"><a href="#cb126-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Maximum </span></span>
 <span id="cb126-2"><a href="#cb126-2" aria-hidden="true" tabindex="-1"></a>max_row <span class="ot">&lt;-</span> fit_data_102 <span class="sc">%&gt;%</span> <span class="fu">filter</span>(Fitted <span class="sc">==</span> <span class="fu">max</span>(Fitted))</span>
 <span id="cb126-3"><a href="#cb126-3" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Maximum:</span><span class="sc">\n</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -3067,7 +3067,7 @@ Achieved convergence tolerance: 7.629e-06</code></pre>
 1           17   106.
 2           41   106.</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb130"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb130-1"><a href="#cb130-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Minimum bestimmen</span></span>
+<div class="sourceCode cell-code" id="cb130"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb130-1"><a href="#cb130-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Minimum</span></span>
 <span id="cb130-2"><a href="#cb130-2" aria-hidden="true" tabindex="-1"></a>min_row <span class="ot">&lt;-</span> fit_data_102 <span class="sc">%&gt;%</span> <span class="fu">filter</span>(Fitted <span class="sc">==</span> <span class="fu">min</span>(Fitted))</span>
 <span id="cb130-3"><a href="#cb130-3" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Minimum:</span><span class="sc">\n</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -3479,7 +3479,7 @@ acr          -1.1851         0.0097  -1.2040  -1.1662       0</code></pre>
 <span id="cb188-4"><a href="#cb188-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">start =</span> <span class="fu">list</span>(<span class="at">A =</span> <span class="dv">10</span>, <span class="at">phi =</span> <span class="dv">0</span>, <span class="at">C =</span> <span class="dv">100</span>)  <span class="co"># start values</span></span>
 <span id="cb188-5"><a href="#cb188-5" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb188-6"><a href="#cb188-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb188-7"><a href="#cb188-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Ergebnis anzeigen</span></span>
+<span id="cb188-7"><a href="#cb188-7" aria-hidden="true" tabindex="-1"></a><span class="co"># result</span></span>
 <span id="cb188-8"><a href="#cb188-8" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(cos_fit_102_orig)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
@@ -3526,7 +3526,7 @@ Achieved convergence tolerance: 1.922e-07</code></pre>
 <span id="cb191-4"><a href="#cb191-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">start =</span> <span class="fu">list</span>(<span class="at">A =</span> <span class="dv">10</span>, <span class="at">phi =</span> <span class="dv">0</span>, <span class="at">C =</span> <span class="dv">100</span>)  <span class="co"># start values</span></span>
 <span id="cb191-5"><a href="#cb191-5" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb191-6"><a href="#cb191-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb191-7"><a href="#cb191-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Ergebnis anzeigen</span></span>
+<span id="cb191-7"><a href="#cb191-7" aria-hidden="true" tabindex="-1"></a><span class="co"># result</span></span>
 <span id="cb191-8"><a href="#cb191-8" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(cos_fit_104_orig)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
@@ -3573,7 +3573,7 @@ Achieved convergence tolerance: 1.57e-09</code></pre>
 <span id="cb194-4"><a href="#cb194-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">start =</span> <span class="fu">list</span>(<span class="at">A =</span> <span class="dv">10</span>, <span class="at">phi =</span> <span class="dv">0</span>, <span class="at">C =</span> <span class="dv">100</span>)  <span class="co"># start values</span></span>
 <span id="cb194-5"><a href="#cb194-5" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb194-6"><a href="#cb194-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb194-7"><a href="#cb194-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Ergebnis anzeigen</span></span>
+<span id="cb194-7"><a href="#cb194-7" aria-hidden="true" tabindex="-1"></a><span class="co"># result</span></span>
 <span id="cb194-8"><a href="#cb194-8" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(cos_fit_107_orig)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
@@ -3620,7 +3620,7 @@ Achieved convergence tolerance: 3.927e-06</code></pre>
 <span id="cb197-4"><a href="#cb197-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">start =</span> <span class="fu">list</span>(<span class="at">A =</span> <span class="dv">10</span>, <span class="at">phi =</span> <span class="dv">0</span>, <span class="at">C =</span> <span class="dv">100</span>)  <span class="co"># start values</span></span>
 <span id="cb197-5"><a href="#cb197-5" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb197-6"><a href="#cb197-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb197-7"><a href="#cb197-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Ergebnis anzeigen</span></span>
+<span id="cb197-7"><a href="#cb197-7" aria-hidden="true" tabindex="-1"></a><span class="co"># result</span></span>
 <span id="cb197-8"><a href="#cb197-8" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(cos_fit_108_orig)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
@@ -3667,7 +3667,7 @@ Achieved convergence tolerance: 2.572e-07</code></pre>
 <span id="cb200-4"><a href="#cb200-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">start =</span> <span class="fu">list</span>(<span class="at">A =</span> <span class="dv">10</span>, <span class="at">phi =</span> <span class="dv">0</span>, <span class="at">C =</span> <span class="dv">100</span>)  <span class="co"># start values</span></span>
 <span id="cb200-5"><a href="#cb200-5" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb200-6"><a href="#cb200-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb200-7"><a href="#cb200-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Ergebnis anzeigen</span></span>
+<span id="cb200-7"><a href="#cb200-7" aria-hidden="true" tabindex="-1"></a><span class="co"># result</span></span>
 <span id="cb200-8"><a href="#cb200-8" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(cos_fit_109_orig)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
@@ -3714,7 +3714,7 @@ Achieved convergence tolerance: 2.21e-09</code></pre>
 <span id="cb203-4"><a href="#cb203-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">start =</span> <span class="fu">list</span>(<span class="at">A =</span> <span class="dv">10</span>, <span class="at">phi =</span> <span class="dv">0</span>, <span class="at">C =</span> <span class="dv">100</span>)  <span class="co"># start values</span></span>
 <span id="cb203-5"><a href="#cb203-5" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb203-6"><a href="#cb203-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb203-7"><a href="#cb203-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Ergebnis anzeigen</span></span>
+<span id="cb203-7"><a href="#cb203-7" aria-hidden="true" tabindex="-1"></a><span class="co"># result</span></span>
 <span id="cb203-8"><a href="#cb203-8" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(cos_fit_112_orig)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
@@ -4084,20 +4084,20 @@ Achieved convergence tolerance: 3.39e-07</code></pre>
 <section id="trouble-shooting-cosine-fit" class="level3">
 <h3 class="anchored" data-anchor-id="trouble-shooting-cosine-fit">Trouble Shooting: Cosine Fit</h3>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb242"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb242-1"><a href="#cb242-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Zeitreihe erzeugen</span></span>
+<div class="sourceCode cell-code" id="cb242"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb242-1"><a href="#cb242-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. time grid</span></span>
 <span id="cb242-2"><a href="#cb242-2" aria-hidden="true" tabindex="-1"></a>datetime <span class="ot">&lt;-</span> <span class="fu">seq</span>(</span>
 <span id="cb242-3"><a href="#cb242-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">from =</span> <span class="fu">as.POSIXct</span>(<span class="st">"2025-01-01 00:00:00"</span>),</span>
 <span id="cb242-4"><a href="#cb242-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">to =</span> <span class="fu">as.POSIXct</span>(<span class="st">"2025-01-07 23:30:00"</span>),</span>
 <span id="cb242-5"><a href="#cb242-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">by =</span> <span class="st">"30 min"</span></span>
 <span id="cb242-6"><a href="#cb242-6" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb242-7"><a href="#cb242-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb242-8"><a href="#cb242-8" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Dezimalzeit für 24h-Periode</span></span>
+<span id="cb242-8"><a href="#cb242-8" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. dectime for 24h-Period</span></span>
 <span id="cb242-9"><a href="#cb242-9" aria-hidden="true" tabindex="-1"></a>dec.time <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(<span class="fu">format</span>(datetime, <span class="st">"%H"</span>)) <span class="sc">+</span> <span class="fu">as.numeric</span>(<span class="fu">format</span>(datetime, <span class="st">"%M"</span>)) <span class="sc">/</span> <span class="dv">60</span></span>
 <span id="cb242-10"><a href="#cb242-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb242-11"><a href="#cb242-11" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Cosinus mit 24h-Periode, Maximum um 18 Uhr</span></span>
+<span id="cb242-11"><a href="#cb242-11" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Cosine with 24h-Period, Maximum at 18:00</span></span>
 <span id="cb242-12"><a href="#cb242-12" aria-hidden="true" tabindex="-1"></a>mesor <span class="ot">&lt;-</span> <span class="dv">100</span></span>
 <span id="cb242-13"><a href="#cb242-13" aria-hidden="true" tabindex="-1"></a>amplitude <span class="ot">&lt;-</span> <span class="dv">20</span></span>
-<span id="cb242-14"><a href="#cb242-14" aria-hidden="true" tabindex="-1"></a>phase_shift <span class="ot">&lt;-</span> pi<span class="sc">/</span><span class="dv">2</span>  <span class="co"># Maximum bei 18 Uhr</span></span>
+<span id="cb242-14"><a href="#cb242-14" aria-hidden="true" tabindex="-1"></a>phase_shift <span class="ot">&lt;-</span> pi<span class="sc">/</span><span class="dv">2</span>  </span>
 <span id="cb242-15"><a href="#cb242-15" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb242-16"><a href="#cb242-16" aria-hidden="true" tabindex="-1"></a>glucose <span class="ot">&lt;-</span> mesor <span class="sc">+</span> amplitude <span class="sc">*</span> <span class="fu">cos</span>(<span class="dv">2</span> <span class="sc">*</span> pi <span class="sc">*</span> dec.time <span class="sc">/</span> <span class="dv">24</span> <span class="sc">+</span> phase_shift)</span>
 <span id="cb242-17"><a href="#cb242-17" aria-hidden="true" tabindex="-1"></a></span>
@@ -4108,7 +4108,7 @@ Achieved convergence tolerance: 3.39e-07</code></pre>
 <span id="cb242-22"><a href="#cb242-22" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(synthetic_24h, <span class="fu">aes</span>(<span class="at">x =</span> datetime, <span class="at">y =</span> glucose)) <span class="sc">+</span></span>
 <span id="cb242-23"><a href="#cb242-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">color =</span> <span class="st">"darkorange3"</span>) <span class="sc">+</span></span>
 <span id="cb242-24"><a href="#cb242-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb242-25"><a href="#cb242-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Synthetic Glucose Curve (Min at 6:00 , Max bei 18:00)"</span>,</span>
+<span id="cb242-25"><a href="#cb242-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Synthetic Glucose Curve (Min at 6:00 , Max at 18:00)"</span>,</span>
 <span id="cb242-26"><a href="#cb242-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Glucose (mg/dl)"</span>, <span class="at">x =</span> <span class="st">"Time (days)"</span></span>
 <span id="cb242-27"><a href="#cb242-27" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
 <span id="cb242-28"><a href="#cb242-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -4119,7 +4119,7 @@ Achieved convergence tolerance: 3.39e-07</code></pre>
 </figure>
 </div>
 </div>
-<div class="sourceCode cell-code" id="cb243"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb243-1"><a href="#cb243-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 5. Cosinor-Komponenten</span></span>
+<div class="sourceCode cell-code" id="cb243"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb243-1"><a href="#cb243-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 5. Cosinor-Components</span></span>
 <span id="cb243-2"><a href="#cb243-2" aria-hidden="true" tabindex="-1"></a>synthetic_24h <span class="ot">&lt;-</span> synthetic_24h <span class="sc">%&gt;%</span></span>
 <span id="cb243-3"><a href="#cb243-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
 <span id="cb243-4"><a href="#cb243-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">cos_part =</span> <span class="fu">cos</span>(<span class="dv">2</span> <span class="sc">*</span> pi <span class="sc">*</span> dec.time <span class="sc">/</span> <span class="dv">24</span>),</span>
@@ -4128,7 +4128,7 @@ Achieved convergence tolerance: 3.39e-07</code></pre>
 <span id="cb243-7"><a href="#cb243-7" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb243-8"><a href="#cb243-8" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb243-9"><a href="#cb243-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb243-10"><a href="#cb243-10" aria-hidden="true" tabindex="-1"></a><span class="do">### ----- Manueller lm-Fit -----</span></span>
+<span id="cb243-10"><a href="#cb243-10" aria-hidden="true" tabindex="-1"></a><span class="do">### ----- Manuel lm-Fit -----</span></span>
 <span id="cb243-11"><a href="#cb243-11" aria-hidden="true" tabindex="-1"></a>fit_lm <span class="ot">&lt;-</span> <span class="fu">lm</span>(glucose <span class="sc">~</span> cos_part <span class="sc">+</span> sin_part, <span class="at">data =</span> synthetic_24h)</span>
 <span id="cb243-12"><a href="#cb243-12" aria-hidden="true" tabindex="-1"></a>coefs_lm <span class="ot">&lt;-</span> <span class="fu">coef</span>(fit_lm)</span>
 <span id="cb243-13"><a href="#cb243-13" aria-hidden="true" tabindex="-1"></a></span>
@@ -4175,9 +4175,9 @@ Achieved convergence tolerance: 3.39e-07</code></pre>
 <span id="cb243-54"><a href="#cb243-54" aria-hidden="true" tabindex="-1"></a>  <span class="at">MinTime_Hours_cos =</span> min_time_cos</span>
 <span id="cb243-55"><a href="#cb243-55" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb243-56"><a href="#cb243-56" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb243-57"><a href="#cb243-57" aria-hidden="true" tabindex="-1"></a><span class="do">######################## das ganze für den Datensatz der ID 102 ausprobieren</span></span>
+<span id="cb243-57"><a href="#cb243-57" aria-hidden="true" tabindex="-1"></a><span class="do">######################## try this for 102</span></span>
 <span id="cb243-58"><a href="#cb243-58" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb243-59"><a href="#cb243-59" aria-hidden="true" tabindex="-1"></a><span class="co"># Daten für Patient ID 102 vorbereiten</span></span>
+<span id="cb243-59"><a href="#cb243-59" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb243-60"><a href="#cb243-60" aria-hidden="true" tabindex="-1"></a>glucose_fit_102_data <span class="ot">&lt;-</span> cleaned_data_deduplicated <span class="sc">%&gt;%</span></span>
 <span id="cb243-61"><a href="#cb243-61" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(ID <span class="sc">==</span> <span class="st">"102"</span>) <span class="sc">%&gt;%</span> </span>
 <span id="cb243-62"><a href="#cb243-62" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
@@ -4185,14 +4185,14 @@ Achieved convergence tolerance: 3.39e-07</code></pre>
 <span id="cb243-64"><a href="#cb243-64" aria-hidden="true" tabindex="-1"></a>    <span class="at">dec.time =</span> <span class="fu">hour</span>(datetime) <span class="sc">+</span> <span class="fu">minute</span>(datetime) <span class="sc">/</span> <span class="dv">60</span></span>
 <span id="cb243-65"><a href="#cb243-65" aria-hidden="true" tabindex="-1"></a>  )</span>
 <span id="cb243-66"><a href="#cb243-66" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb243-67"><a href="#cb243-67" aria-hidden="true" tabindex="-1"></a><span class="co"># 5. Cosinor-Komponenten</span></span>
+<span id="cb243-67"><a href="#cb243-67" aria-hidden="true" tabindex="-1"></a><span class="co"># 5. Cosinor-components</span></span>
 <span id="cb243-68"><a href="#cb243-68" aria-hidden="true" tabindex="-1"></a>glucose_fit_102_data <span class="ot">&lt;-</span> glucose_fit_102_data <span class="sc">%&gt;%</span></span>
 <span id="cb243-69"><a href="#cb243-69" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
 <span id="cb243-70"><a href="#cb243-70" aria-hidden="true" tabindex="-1"></a>    <span class="at">cos_part =</span> <span class="fu">cos</span>(<span class="dv">2</span> <span class="sc">*</span> pi <span class="sc">*</span> dec.time <span class="sc">/</span> <span class="dv">24</span>),</span>
 <span id="cb243-71"><a href="#cb243-71" aria-hidden="true" tabindex="-1"></a>    <span class="at">sin_part =</span> <span class="fu">sin</span>(<span class="dv">2</span> <span class="sc">*</span> pi <span class="sc">*</span> dec.time <span class="sc">/</span> <span class="dv">24</span>)</span>
 <span id="cb243-72"><a href="#cb243-72" aria-hidden="true" tabindex="-1"></a>  )</span>
 <span id="cb243-73"><a href="#cb243-73" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb243-74"><a href="#cb243-74" aria-hidden="true" tabindex="-1"></a><span class="do">### ----- Manueller lm-Fit -----</span></span>
+<span id="cb243-74"><a href="#cb243-74" aria-hidden="true" tabindex="-1"></a><span class="do">### ----- Manual lm-Fit -----</span></span>
 <span id="cb243-75"><a href="#cb243-75" aria-hidden="true" tabindex="-1"></a>fit_lm <span class="ot">&lt;-</span> <span class="fu">lm</span>(<span class="st">`</span><span class="at">Glucose (mg/dl)</span><span class="st">`</span> <span class="sc">~</span> cos_part <span class="sc">+</span> sin_part, <span class="at">data =</span> glucose_fit_102_data)</span>
 <span id="cb243-76"><a href="#cb243-76" aria-hidden="true" tabindex="-1"></a>coefs_lm <span class="ot">&lt;-</span> <span class="fu">coef</span>(fit_lm)</span>
 <span id="cb243-77"><a href="#cb243-77" aria-hidden="true" tabindex="-1"></a></span>
@@ -4213,18 +4213,18 @@ Achieved convergence tolerance: 3.39e-07</code></pre>
 <span id="cb243-92"><a href="#cb243-92" aria-hidden="true" tabindex="-1"></a>intercept_cos <span class="ot">&lt;-</span> coefs_cos[<span class="st">"(Intercept)"</span>]</span>
 <span id="cb243-93"><a href="#cb243-93" aria-hidden="true" tabindex="-1"></a>amp_cos <span class="ot">&lt;-</span> coefs_cos[<span class="st">"amp"</span>]</span>
 <span id="cb243-94"><a href="#cb243-94" aria-hidden="true" tabindex="-1"></a>acr_rad_cos <span class="ot">&lt;-</span> coefs_cos[<span class="st">"acr"</span>]</span>
-<span id="cb243-95"><a href="#cb243-95" aria-hidden="true" tabindex="-1"></a>acr_hr_cos <span class="ot">&lt;-</span> (acr_rad_cos <span class="sc">*</span> <span class="dv">24</span> <span class="sc">/</span> (<span class="dv">2</span> <span class="sc">*</span> pi)) <span class="sc">%%</span> <span class="dv">24</span>  <span class="co"># Konsistent: %% 24 hier anwenden</span></span>
+<span id="cb243-95"><a href="#cb243-95" aria-hidden="true" tabindex="-1"></a>acr_hr_cos <span class="ot">&lt;-</span> (acr_rad_cos <span class="sc">*</span> <span class="dv">24</span> <span class="sc">/</span> (<span class="dv">2</span> <span class="sc">*</span> pi)) <span class="sc">%%</span> <span class="dv">24</span> </span>
 <span id="cb243-96"><a href="#cb243-96" aria-hidden="true" tabindex="-1"></a>max_time_cos <span class="ot">&lt;-</span> acr_hr_cos</span>
 <span id="cb243-97"><a href="#cb243-97" aria-hidden="true" tabindex="-1"></a>min_time_cos <span class="ot">&lt;-</span> (acr_hr_cos <span class="sc">+</span> <span class="dv">12</span>) <span class="sc">%%</span> <span class="dv">24</span></span>
 <span id="cb243-98"><a href="#cb243-98" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb243-99"><a href="#cb243-99" aria-hidden="true" tabindex="-1"></a><span class="do">### ----- Zusammenfassung in DataFrame -----</span></span>
+<span id="cb243-99"><a href="#cb243-99" aria-hidden="true" tabindex="-1"></a><span class="do">### ----- DataFrame -----</span></span>
 <span id="cb243-100"><a href="#cb243-100" aria-hidden="true" tabindex="-1"></a>summary_df_102 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
 <span id="cb243-101"><a href="#cb243-101" aria-hidden="true" tabindex="-1"></a>  <span class="at">Patient_ID =</span> <span class="st">"102"</span>,</span>
 <span id="cb243-102"><a href="#cb243-102" aria-hidden="true" tabindex="-1"></a>  <span class="at">Window_Start =</span> <span class="fu">min</span>(glucose_fit_102_data<span class="sc">$</span>datetime, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
 <span id="cb243-103"><a href="#cb243-103" aria-hidden="true" tabindex="-1"></a>  <span class="at">Window_End =</span> <span class="fu">max</span>(glucose_fit_102_data<span class="sc">$</span>datetime, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
 <span id="cb243-104"><a href="#cb243-104" aria-hidden="true" tabindex="-1"></a>  <span class="at">N_Observations =</span> <span class="fu">nrow</span>(glucose_fit_102_data),</span>
 <span id="cb243-105"><a href="#cb243-105" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb243-106"><a href="#cb243-106" aria-hidden="true" tabindex="-1"></a>  <span class="co"># manuelles Modell</span></span>
+<span id="cb243-106"><a href="#cb243-106" aria-hidden="true" tabindex="-1"></a>  <span class="co"># manual Modell</span></span>
 <span id="cb243-107"><a href="#cb243-107" aria-hidden="true" tabindex="-1"></a>  <span class="at">Intercept_lm =</span> intercept_l,</span>
 <span id="cb243-108"><a href="#cb243-108" aria-hidden="true" tabindex="-1"></a>  <span class="at">Amp_lm =</span> amp_l,</span>
 <span id="cb243-109"><a href="#cb243-109" aria-hidden="true" tabindex="-1"></a>  <span class="at">Acrophase_Rad_lm =</span> acr_rad_l,</span>
@@ -4898,7 +4898,7 @@ Achieved convergence tolerance: 3.39e-07</code></pre>
 </div>
 <p><strong>Description:</strong> Data Set for Comparison of cosinor.lm() and lm() method</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb257"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb257-1"><a href="#cb257-1" aria-hidden="true" tabindex="-1"></a> <span class="co"># Leerer DataFrame zur Speicherung</span></span>
+<div class="sourceCode cell-code" id="cb257"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb257-1"><a href="#cb257-1" aria-hidden="true" tabindex="-1"></a> <span class="co"># empty data frame</span></span>
 <span id="cb257-2"><a href="#cb257-2" aria-hidden="true" tabindex="-1"></a>moving_window_comparison <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
 <span id="cb257-3"><a href="#cb257-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">Window_Start =</span> <span class="fu">as.POSIXct</span>(<span class="fu">character</span>()),</span>
 <span id="cb257-4"><a href="#cb257-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">Amp_C =</span> <span class="fu">numeric</span>(),</span>
@@ -4910,11 +4910,11 @@ Achieved convergence tolerance: 3.39e-07</code></pre>
 <span id="cb257-10"><a href="#cb257-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span></span>
 <span id="cb257-11"><a href="#cb257-11" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb257-12"><a href="#cb257-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb257-13"><a href="#cb257-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Zeitgrenzen</span></span>
+<span id="cb257-13"><a href="#cb257-13" aria-hidden="true" tabindex="-1"></a><span class="co"># satrt and end</span></span>
 <span id="cb257-14"><a href="#cb257-14" aria-hidden="true" tabindex="-1"></a>start_time_mv_102 <span class="ot">&lt;-</span> <span class="fu">min</span>(glucose_fit_102_data<span class="sc">$</span>datetime)</span>
 <span id="cb257-15"><a href="#cb257-15" aria-hidden="true" tabindex="-1"></a>end_time_mv_102   <span class="ot">&lt;-</span> <span class="fu">max</span>(glucose_fit_102_data<span class="sc">$</span>datetime)</span>
 <span id="cb257-16"><a href="#cb257-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb257-17"><a href="#cb257-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Fenster und Schritt</span></span>
+<span id="cb257-17"><a href="#cb257-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Fwindow and steps</span></span>
 <span id="cb257-18"><a href="#cb257-18" aria-hidden="true" tabindex="-1"></a>window_length <span class="ot">&lt;-</span> <span class="fu">days</span>(<span class="dv">3</span>)</span>
 <span id="cb257-19"><a href="#cb257-19" aria-hidden="true" tabindex="-1"></a>step_size <span class="ot">&lt;-</span> <span class="fu">days</span>(<span class="dv">1</span>)</span>
 <span id="cb257-20"><a href="#cb257-20" aria-hidden="true" tabindex="-1"></a>current_start_102 <span class="ot">&lt;-</span> start_time_mv_102</span>
@@ -4924,7 +4924,7 @@ Achieved convergence tolerance: 3.39e-07</code></pre>
 <span id="cb257-24"><a href="#cb257-24" aria-hidden="true" tabindex="-1"></a>  </span>
 <span id="cb257-25"><a href="#cb257-25" aria-hidden="true" tabindex="-1"></a>  current_end_102 <span class="ot">&lt;-</span> current_start_102 <span class="sc">+</span> window_length</span>
 <span id="cb257-26"><a href="#cb257-26" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb257-27"><a href="#cb257-27" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Daten filtern</span></span>
+<span id="cb257-27"><a href="#cb257-27" aria-hidden="true" tabindex="-1"></a>  <span class="co"># filter data</span></span>
 <span id="cb257-28"><a href="#cb257-28" aria-hidden="true" tabindex="-1"></a>  window_data_102_comparison <span class="ot">&lt;-</span> glucose_fit_102_data <span class="sc">%&gt;%</span></span>
 <span id="cb257-29"><a href="#cb257-29" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(datetime <span class="sc">&gt;=</span> current_start_102 <span class="sc">&amp;</span> datetime <span class="sc">&lt;</span> current_end_102)</span>
 <span id="cb257-30"><a href="#cb257-30" aria-hidden="true" tabindex="-1"></a>  </span>
@@ -4933,12 +4933,12 @@ Achieved convergence tolerance: 3.39e-07</code></pre>
 <span id="cb257-33"><a href="#cb257-33" aria-hidden="true" tabindex="-1"></a>    <span class="cf">next</span></span>
 <span id="cb257-34"><a href="#cb257-34" aria-hidden="true" tabindex="-1"></a>  }</span>
 <span id="cb257-35"><a href="#cb257-35" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb257-36"><a href="#cb257-36" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Cosinor-Teile berechnen</span></span>
+<span id="cb257-36"><a href="#cb257-36" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Cosinor-paramters</span></span>
 <span id="cb257-37"><a href="#cb257-37" aria-hidden="true" tabindex="-1"></a>  dec_time <span class="ot">&lt;-</span> window_data_102_comparison<span class="sc">$</span>dec.time</span>
 <span id="cb257-38"><a href="#cb257-38" aria-hidden="true" tabindex="-1"></a>  window_data_102_comparison<span class="sc">$</span>cos_part <span class="ot">&lt;-</span> <span class="fu">cos</span>(<span class="dv">2</span> <span class="sc">*</span> pi <span class="sc">*</span> dec_time <span class="sc">/</span> <span class="dv">24</span>)</span>
 <span id="cb257-39"><a href="#cb257-39" aria-hidden="true" tabindex="-1"></a>  window_data_102_comparison<span class="sc">$</span>sin_part <span class="ot">&lt;-</span> <span class="fu">sin</span>(<span class="dv">2</span> <span class="sc">*</span> pi <span class="sc">*</span> dec_time <span class="sc">/</span> <span class="dv">24</span>)</span>
 <span id="cb257-40"><a href="#cb257-40" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb257-41"><a href="#cb257-41" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Lineares Modell</span></span>
+<span id="cb257-41"><a href="#cb257-41" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Linear model</span></span>
 <span id="cb257-42"><a href="#cb257-42" aria-hidden="true" tabindex="-1"></a>  fit_test <span class="ot">&lt;-</span> <span class="fu">tryCatch</span>({</span>
 <span id="cb257-43"><a href="#cb257-43" aria-hidden="true" tabindex="-1"></a>    <span class="fu">lm</span>(<span class="st">`</span><span class="at">Glucose (mg/dl)</span><span class="st">`</span> <span class="sc">~</span> cos_part <span class="sc">+</span> sin_part, <span class="at">data =</span> window_data_102_comparison)</span>
 <span id="cb257-44"><a href="#cb257-44" aria-hidden="true" tabindex="-1"></a>  }, <span class="at">error =</span> <span class="cf">function</span>(e) <span class="cn">NA</span>)</span>
@@ -4961,7 +4961,7 @@ Achieved convergence tolerance: 3.39e-07</code></pre>
 <span id="cb257-61"><a href="#cb257-61" aria-hidden="true" tabindex="-1"></a>  amp_L      <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(beta_102<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> gamma_102<span class="sc">^</span><span class="dv">2</span>)</span>
 <span id="cb257-62"><a href="#cb257-62" aria-hidden="true" tabindex="-1"></a>  acr_L_rad  <span class="ot">&lt;-</span> <span class="fu">atan2</span>(gamma_102, beta_102)</span>
 <span id="cb257-63"><a href="#cb257-63" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb257-64"><a href="#cb257-64" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Cosinor-Paketmodell</span></span>
+<span id="cb257-64"><a href="#cb257-64" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Cosinor</span></span>
 <span id="cb257-65"><a href="#cb257-65" aria-hidden="true" tabindex="-1"></a>  fit_102 <span class="ot">&lt;-</span> <span class="fu">tryCatch</span>({</span>
 <span id="cb257-66"><a href="#cb257-66" aria-hidden="true" tabindex="-1"></a>    <span class="fu">cosinor.lm</span>(<span class="st">`</span><span class="at">Glucose (mg/dl)</span><span class="st">`</span> <span class="sc">~</span> <span class="fu">time</span>(dec.time), </span>
 <span id="cb257-67"><a href="#cb257-67" aria-hidden="true" tabindex="-1"></a>               <span class="at">data =</span> window_data_102_comparison, </span>
@@ -4985,7 +4985,7 @@ Achieved convergence tolerance: 3.39e-07</code></pre>
 <span id="cb257-85"><a href="#cb257-85" aria-hidden="true" tabindex="-1"></a>      <span class="cf">next</span></span>
 <span id="cb257-86"><a href="#cb257-86" aria-hidden="true" tabindex="-1"></a>    }</span>
 <span id="cb257-87"><a href="#cb257-87" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb257-88"><a href="#cb257-88" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Ergebnisse speichern</span></span>
+<span id="cb257-88"><a href="#cb257-88" aria-hidden="true" tabindex="-1"></a>    <span class="co"># results</span></span>
 <span id="cb257-89"><a href="#cb257-89" aria-hidden="true" tabindex="-1"></a>    moving_window_comparison <span class="ot">&lt;-</span> <span class="fu">rbind</span>(moving_window_comparison, <span class="fu">data.frame</span>(</span>
 <span id="cb257-90"><a href="#cb257-90" aria-hidden="true" tabindex="-1"></a>      <span class="at">Window_Start =</span> current_start_102,</span>
 <span id="cb257-91"><a href="#cb257-91" aria-hidden="true" tabindex="-1"></a>      <span class="at">Amp_C =</span> amp_C,</span>
@@ -5665,27 +5665,27 @@ Achieved convergence tolerance: 3.39e-07</code></pre>
 </div>
 <p><strong>Description:</strong> Moving window with lm() and standard time</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb269"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb269-1"><a href="#cb269-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Leere Liste für alle IDs</span></span>
+<div class="sourceCode cell-code" id="cb269"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb269-1"><a href="#cb269-1" aria-hidden="true" tabindex="-1"></a><span class="co"># empty list for all IDs</span></span>
 <span id="cb269-2"><a href="#cb269-2" aria-hidden="true" tabindex="-1"></a>all_results <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
 <span id="cb269-3"><a href="#cb269-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb269-4"><a href="#cb269-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Alle IDs extrahieren</span></span>
+<span id="cb269-4"><a href="#cb269-4" aria-hidden="true" tabindex="-1"></a><span class="co"># extract all ids</span></span>
 <span id="cb269-5"><a href="#cb269-5" aria-hidden="true" tabindex="-1"></a>ids <span class="ot">&lt;-</span> <span class="fu">unique</span>(glucose_fit_data<span class="sc">$</span>ID)</span>
 <span id="cb269-6"><a href="#cb269-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb269-7"><a href="#cb269-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Fenster-Parameter</span></span>
+<span id="cb269-7"><a href="#cb269-7" aria-hidden="true" tabindex="-1"></a><span class="co"># window paramters</span></span>
 <span id="cb269-8"><a href="#cb269-8" aria-hidden="true" tabindex="-1"></a>window_length <span class="ot">&lt;-</span> <span class="fu">days</span>(<span class="dv">3</span>)</span>
 <span id="cb269-9"><a href="#cb269-9" aria-hidden="true" tabindex="-1"></a>step_size <span class="ot">&lt;-</span> <span class="fu">days</span>(<span class="dv">1</span>)</span>
 <span id="cb269-10"><a href="#cb269-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb269-11"><a href="#cb269-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Schleife über alle IDs</span></span>
+<span id="cb269-11"><a href="#cb269-11" aria-hidden="true" tabindex="-1"></a><span class="co"># loop for all ids</span></span>
 <span id="cb269-12"><a href="#cb269-12" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (id <span class="cf">in</span> ids) {</span>
 <span id="cb269-13"><a href="#cb269-13" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb269-14"><a href="#cb269-14" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Daten für aktuelle ID</span></span>
+<span id="cb269-14"><a href="#cb269-14" aria-hidden="true" tabindex="-1"></a>  <span class="co"># data for current id</span></span>
 <span id="cb269-15"><a href="#cb269-15" aria-hidden="true" tabindex="-1"></a>  glucose_id_data <span class="ot">&lt;-</span> glucose_fit_data <span class="sc">%&gt;%</span></span>
 <span id="cb269-16"><a href="#cb269-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(ID <span class="sc">==</span> id)</span>
 <span id="cb269-17"><a href="#cb269-17" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb269-18"><a href="#cb269-18" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Prüfe, ob genug Daten da sind</span></span>
+<span id="cb269-18"><a href="#cb269-18" aria-hidden="true" tabindex="-1"></a>  <span class="co"># check if enough data</span></span>
 <span id="cb269-19"><a href="#cb269-19" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">nrow</span>(glucose_id_data) <span class="sc">&lt;</span> <span class="dv">400</span>) <span class="cf">next</span></span>
 <span id="cb269-20"><a href="#cb269-20" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb269-21"><a href="#cb269-21" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Zeitgrenzent</span></span>
+<span id="cb269-21"><a href="#cb269-21" aria-hidden="true" tabindex="-1"></a>  <span class="co"># end and start time</span></span>
 <span id="cb269-22"><a href="#cb269-22" aria-hidden="true" tabindex="-1"></a>  start_time <span class="ot">&lt;-</span> <span class="fu">min</span>(glucose_id_data<span class="sc">$</span>datetime_std,<span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
 <span id="cb269-23"><a href="#cb269-23" aria-hidden="true" tabindex="-1"></a>  end_time   <span class="ot">&lt;-</span> <span class="fu">max</span>(glucose_id_data<span class="sc">$</span>datetime_std,<span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
 <span id="cb269-24"><a href="#cb269-24" aria-hidden="true" tabindex="-1"></a>  </span>
@@ -5697,11 +5697,11 @@ Achieved convergence tolerance: 3.39e-07</code></pre>
 <span id="cb269-30"><a href="#cb269-30" aria-hidden="true" tabindex="-1"></a>    </span>
 <span id="cb269-31"><a href="#cb269-31" aria-hidden="true" tabindex="-1"></a>    current_end <span class="ot">&lt;-</span> current_start <span class="sc">+</span> window_length</span>
 <span id="cb269-32"><a href="#cb269-32" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb269-33"><a href="#cb269-33" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Daten im Fenster</span></span>
+<span id="cb269-33"><a href="#cb269-33" aria-hidden="true" tabindex="-1"></a>   <span class="co"># Data in window</span></span>
 <span id="cb269-34"><a href="#cb269-34" aria-hidden="true" tabindex="-1"></a>    window_data <span class="ot">&lt;-</span> glucose_id_data <span class="sc">%&gt;%</span></span>
 <span id="cb269-35"><a href="#cb269-35" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(datetime_std <span class="sc">&gt;=</span> current_start <span class="sc">&amp;</span> datetime_std <span class="sc">&lt;</span> current_end)</span>
 <span id="cb269-36"><a href="#cb269-36" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb269-37"><a href="#cb269-37" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Skip bei zu wenigen Datenpunkten</span></span>
+<span id="cb269-37"><a href="#cb269-37" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Skip if not enough data points</span></span>
 <span id="cb269-38"><a href="#cb269-38" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">nrow</span>(window_data) <span class="sc">&lt;</span> <span class="dv">400</span>) {</span>
 <span id="cb269-39"><a href="#cb269-39" aria-hidden="true" tabindex="-1"></a>      current_start <span class="ot">&lt;-</span> current_start <span class="sc">+</span> step_size</span>
 <span id="cb269-40"><a href="#cb269-40" aria-hidden="true" tabindex="-1"></a>      <span class="cf">next</span></span>
@@ -5717,7 +5717,7 @@ Achieved convergence tolerance: 3.39e-07</code></pre>
 <span id="cb269-50"><a href="#cb269-50" aria-hidden="true" tabindex="-1"></a>      <span class="fu">lm</span>(<span class="st">`</span><span class="at">Glucose (mg/dl)</span><span class="st">`</span> <span class="sc">~</span> cos_part <span class="sc">+</span> sin_part, <span class="at">data =</span> window_data)</span>
 <span id="cb269-51"><a href="#cb269-51" aria-hidden="true" tabindex="-1"></a>    }, <span class="at">error =</span> <span class="cf">function</span>(e) <span class="cn">NA</span>)</span>
 <span id="cb269-52"><a href="#cb269-52" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb269-53"><a href="#cb269-53" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Falls Fit nicht funktioniert</span></span>
+<span id="cb269-53"><a href="#cb269-53" aria-hidden="true" tabindex="-1"></a>    <span class="co"># if fit not functioning</span></span>
 <span id="cb269-54"><a href="#cb269-54" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="sc">!</span><span class="fu">inherits</span>(fit, <span class="st">"lm"</span>)) {</span>
 <span id="cb269-55"><a href="#cb269-55" aria-hidden="true" tabindex="-1"></a>      current_start <span class="ot">&lt;-</span> current_start <span class="sc">+</span> step_size</span>
 <span id="cb269-56"><a href="#cb269-56" aria-hidden="true" tabindex="-1"></a>      <span class="cf">next</span></span>
@@ -5725,13 +5725,13 @@ Achieved convergence tolerance: 3.39e-07</code></pre>
 <span id="cb269-58"><a href="#cb269-58" aria-hidden="true" tabindex="-1"></a>    </span>
 <span id="cb269-59"><a href="#cb269-59" aria-hidden="true" tabindex="-1"></a>    coefs <span class="ot">&lt;-</span> <span class="fu">coef</span>(fit)</span>
 <span id="cb269-60"><a href="#cb269-60" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb269-61"><a href="#cb269-61" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Falls NA in Koeffizienten</span></span>
+<span id="cb269-61"><a href="#cb269-61" aria-hidden="true" tabindex="-1"></a>    <span class="co"># if NA in coefficients</span></span>
 <span id="cb269-62"><a href="#cb269-62" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">any</span>(<span class="fu">is.na</span>(coefs[<span class="fu">c</span>(<span class="st">"(Intercept)"</span>, <span class="st">"cos_part"</span>, <span class="st">"sin_part"</span>)]))) {</span>
 <span id="cb269-63"><a href="#cb269-63" aria-hidden="true" tabindex="-1"></a>      current_start <span class="ot">&lt;-</span> current_start <span class="sc">+</span> step_size</span>
 <span id="cb269-64"><a href="#cb269-64" aria-hidden="true" tabindex="-1"></a>      <span class="cf">next</span></span>
 <span id="cb269-65"><a href="#cb269-65" aria-hidden="true" tabindex="-1"></a>    }</span>
 <span id="cb269-66"><a href="#cb269-66" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb269-67"><a href="#cb269-67" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Extrahiere Parameter</span></span>
+<span id="cb269-67"><a href="#cb269-67" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Extracte Parameters</span></span>
 <span id="cb269-68"><a href="#cb269-68" aria-hidden="true" tabindex="-1"></a>    intercept <span class="ot">&lt;-</span> coefs[<span class="st">"(Intercept)"</span>]</span>
 <span id="cb269-69"><a href="#cb269-69" aria-hidden="true" tabindex="-1"></a>    beta      <span class="ot">&lt;-</span> coefs[<span class="st">"cos_part"</span>]</span>
 <span id="cb269-70"><a href="#cb269-70" aria-hidden="true" tabindex="-1"></a>    gamma     <span class="ot">&lt;-</span> coefs[<span class="st">"sin_part"</span>]</span>
@@ -5743,7 +5743,7 @@ Achieved convergence tolerance: 3.39e-07</code></pre>
 <span id="cb269-76"><a href="#cb269-76" aria-hidden="true" tabindex="-1"></a>    max_time <span class="ot">&lt;-</span> acrophase_norm</span>
 <span id="cb269-77"><a href="#cb269-77" aria-hidden="true" tabindex="-1"></a>    min_time <span class="ot">&lt;-</span> (acrophase_norm <span class="sc">+</span> <span class="dv">12</span>) <span class="sc">%%</span> <span class="dv">24</span></span>
 <span id="cb269-78"><a href="#cb269-78" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb269-79"><a href="#cb269-79" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Ergebnisse speichern</span></span>
+<span id="cb269-79"><a href="#cb269-79" aria-hidden="true" tabindex="-1"></a>    <span class="co"># save results</span></span>
 <span id="cb269-80"><a href="#cb269-80" aria-hidden="true" tabindex="-1"></a>    id_results[[<span class="fu">length</span>(id_results) <span class="sc">+</span> <span class="dv">1</span>]] <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
 <span id="cb269-81"><a href="#cb269-81" aria-hidden="true" tabindex="-1"></a>      <span class="at">ID =</span> id,</span>
 <span id="cb269-82"><a href="#cb269-82" aria-hidden="true" tabindex="-1"></a>      <span class="at">Window_Start =</span> current_start,</span>
@@ -5756,20 +5756,20 @@ Achieved convergence tolerance: 3.39e-07</code></pre>
 <span id="cb269-89"><a href="#cb269-89" aria-hidden="true" tabindex="-1"></a>      <span class="at">Intercept =</span> intercept</span>
 <span id="cb269-90"><a href="#cb269-90" aria-hidden="true" tabindex="-1"></a>    )</span>
 <span id="cb269-91"><a href="#cb269-91" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb269-92"><a href="#cb269-92" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Nächstes Fenster</span></span>
+<span id="cb269-92"><a href="#cb269-92" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Next window</span></span>
 <span id="cb269-93"><a href="#cb269-93" aria-hidden="true" tabindex="-1"></a>    current_start <span class="ot">&lt;-</span> current_start <span class="sc">+</span> step_size</span>
 <span id="cb269-94"><a href="#cb269-94" aria-hidden="true" tabindex="-1"></a>  }</span>
 <span id="cb269-95"><a href="#cb269-95" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb269-96"><a href="#cb269-96" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Ergebnisse der aktuellen ID speichern</span></span>
+<span id="cb269-96"><a href="#cb269-96" aria-hidden="true" tabindex="-1"></a>  <span class="co"># save results of current id</span></span>
 <span id="cb269-97"><a href="#cb269-97" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">length</span>(id_results) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
 <span id="cb269-98"><a href="#cb269-98" aria-hidden="true" tabindex="-1"></a>    all_results[[<span class="fu">length</span>(all_results) <span class="sc">+</span> <span class="dv">1</span>]] <span class="ot">&lt;-</span> <span class="fu">do.call</span>(rbind, id_results)</span>
 <span id="cb269-99"><a href="#cb269-99" aria-hidden="true" tabindex="-1"></a>  }</span>
 <span id="cb269-100"><a href="#cb269-100" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb269-101"><a href="#cb269-101" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb269-102"><a href="#cb269-102" aria-hidden="true" tabindex="-1"></a><span class="co"># Kombiniere alle Ergebnisse in ein DataFrame</span></span>
+<span id="cb269-102"><a href="#cb269-102" aria-hidden="true" tabindex="-1"></a><span class="co"># combine alls results in  DataFrame</span></span>
 <span id="cb269-103"><a href="#cb269-103" aria-hidden="true" tabindex="-1"></a>moving_window_all_ids <span class="ot">&lt;-</span> <span class="fu">do.call</span>(rbind, all_results)</span>
 <span id="cb269-104"><a href="#cb269-104" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb269-105"><a href="#cb269-105" aria-hidden="true" tabindex="-1"></a><span class="co"># Optional: Ergebnisse ansehen</span></span>
+<span id="cb269-105"><a href="#cb269-105" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb269-106"><a href="#cb269-106" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(moving_window_all_ids)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>           ID        Window_Start      Amp Acrophase_Rad Acrophase_Raw
@@ -5790,31 +5790,31 @@ cos_part5            20.35740       20.35740       8.357402 102.33565</code></pr
 </div>
 <p><strong>Description:</strong> Moving window with lm() and daylight saving time</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb271"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb271-1"><a href="#cb271-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Leere Liste für alle IDs</span></span>
+<div class="sourceCode cell-code" id="cb271"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb271-1"><a href="#cb271-1" aria-hidden="true" tabindex="-1"></a><span class="co"># empty list for all IDs</span></span>
 <span id="cb271-2"><a href="#cb271-2" aria-hidden="true" tabindex="-1"></a>all_results <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
 <span id="cb271-3"><a href="#cb271-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb271-4"><a href="#cb271-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Alle IDs extrahieren</span></span>
+<span id="cb271-4"><a href="#cb271-4" aria-hidden="true" tabindex="-1"></a><span class="co"># extract all ids</span></span>
 <span id="cb271-5"><a href="#cb271-5" aria-hidden="true" tabindex="-1"></a>ids <span class="ot">&lt;-</span> <span class="fu">unique</span>(glucose_fit_data<span class="sc">$</span>ID)</span>
 <span id="cb271-6"><a href="#cb271-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb271-7"><a href="#cb271-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Fenster-Parameter</span></span>
+<span id="cb271-7"><a href="#cb271-7" aria-hidden="true" tabindex="-1"></a><span class="co"># window paramters</span></span>
 <span id="cb271-8"><a href="#cb271-8" aria-hidden="true" tabindex="-1"></a>window_length <span class="ot">&lt;-</span> <span class="fu">days</span>(<span class="dv">3</span>)</span>
 <span id="cb271-9"><a href="#cb271-9" aria-hidden="true" tabindex="-1"></a>step_size <span class="ot">&lt;-</span> <span class="fu">days</span>(<span class="dv">1</span>)</span>
 <span id="cb271-10"><a href="#cb271-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb271-11"><a href="#cb271-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Schleife über alle IDs</span></span>
+<span id="cb271-11"><a href="#cb271-11" aria-hidden="true" tabindex="-1"></a><span class="co"># loop for all ids</span></span>
 <span id="cb271-12"><a href="#cb271-12" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (id <span class="cf">in</span> ids) {</span>
 <span id="cb271-13"><a href="#cb271-13" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb271-14"><a href="#cb271-14" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Daten für aktuelle ID</span></span>
+<span id="cb271-14"><a href="#cb271-14" aria-hidden="true" tabindex="-1"></a>  <span class="co"># data for current id</span></span>
 <span id="cb271-15"><a href="#cb271-15" aria-hidden="true" tabindex="-1"></a>  glucose_id_data <span class="ot">&lt;-</span> glucose_fit_data <span class="sc">%&gt;%</span></span>
 <span id="cb271-16"><a href="#cb271-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(ID <span class="sc">==</span> id)</span>
 <span id="cb271-17"><a href="#cb271-17" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb271-18"><a href="#cb271-18" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Prüfe, ob genug Daten da sind</span></span>
+<span id="cb271-18"><a href="#cb271-18" aria-hidden="true" tabindex="-1"></a>  <span class="co"># check if enough data</span></span>
 <span id="cb271-19"><a href="#cb271-19" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">nrow</span>(glucose_id_data) <span class="sc">&lt;</span> <span class="dv">400</span>) <span class="cf">next</span></span>
 <span id="cb271-20"><a href="#cb271-20" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb271-21"><a href="#cb271-21" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Zeitgrenzent</span></span>
+<span id="cb271-21"><a href="#cb271-21" aria-hidden="true" tabindex="-1"></a>  <span class="co"># end and start time</span></span>
 <span id="cb271-22"><a href="#cb271-22" aria-hidden="true" tabindex="-1"></a>  start_time <span class="ot">&lt;-</span> <span class="fu">min</span>(glucose_id_data<span class="sc">$</span>datetime,<span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
 <span id="cb271-23"><a href="#cb271-23" aria-hidden="true" tabindex="-1"></a>  end_time   <span class="ot">&lt;-</span> <span class="fu">max</span>(glucose_id_data<span class="sc">$</span>datetime,<span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
 <span id="cb271-24"><a href="#cb271-24" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb271-25"><a href="#cb271-25" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Starte Sliding Window</span></span>
+<span id="cb271-25"><a href="#cb271-25" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Start Sliding Window</span></span>
 <span id="cb271-26"><a href="#cb271-26" aria-hidden="true" tabindex="-1"></a>  current_start <span class="ot">&lt;-</span> start_time</span>
 <span id="cb271-27"><a href="#cb271-27" aria-hidden="true" tabindex="-1"></a>  id_results <span class="ot">&lt;-</span> <span class="fu">list</span>()  <span class="co"># save per ID</span></span>
 <span id="cb271-28"><a href="#cb271-28" aria-hidden="true" tabindex="-1"></a>  </span>
@@ -5822,11 +5822,11 @@ cos_part5            20.35740       20.35740       8.357402 102.33565</code></pr
 <span id="cb271-30"><a href="#cb271-30" aria-hidden="true" tabindex="-1"></a>    </span>
 <span id="cb271-31"><a href="#cb271-31" aria-hidden="true" tabindex="-1"></a>    current_end <span class="ot">&lt;-</span> current_start <span class="sc">+</span> window_length</span>
 <span id="cb271-32"><a href="#cb271-32" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb271-33"><a href="#cb271-33" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Daten im Fenster</span></span>
+<span id="cb271-33"><a href="#cb271-33" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Data in window</span></span>
 <span id="cb271-34"><a href="#cb271-34" aria-hidden="true" tabindex="-1"></a>    window_data <span class="ot">&lt;-</span> glucose_id_data <span class="sc">%&gt;%</span></span>
 <span id="cb271-35"><a href="#cb271-35" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(datetime <span class="sc">&gt;=</span> current_start <span class="sc">&amp;</span> datetime <span class="sc">&lt;</span> current_end)</span>
 <span id="cb271-36"><a href="#cb271-36" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb271-37"><a href="#cb271-37" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Skip bei zu wenigen Datenpunkten</span></span>
+<span id="cb271-37"><a href="#cb271-37" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Skip if not enough data points</span></span>
 <span id="cb271-38"><a href="#cb271-38" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">nrow</span>(window_data) <span class="sc">&lt;</span> <span class="dv">400</span>) {</span>
 <span id="cb271-39"><a href="#cb271-39" aria-hidden="true" tabindex="-1"></a>      current_start <span class="ot">&lt;-</span> current_start <span class="sc">+</span> step_size</span>
 <span id="cb271-40"><a href="#cb271-40" aria-hidden="true" tabindex="-1"></a>      <span class="cf">next</span></span>
@@ -5842,7 +5842,7 @@ cos_part5            20.35740       20.35740       8.357402 102.33565</code></pr
 <span id="cb271-50"><a href="#cb271-50" aria-hidden="true" tabindex="-1"></a>      <span class="fu">lm</span>(<span class="st">`</span><span class="at">Glucose (mg/dl)</span><span class="st">`</span> <span class="sc">~</span> cos_part <span class="sc">+</span> sin_part, <span class="at">data =</span> window_data)</span>
 <span id="cb271-51"><a href="#cb271-51" aria-hidden="true" tabindex="-1"></a>    }, <span class="at">error =</span> <span class="cf">function</span>(e) <span class="cn">NA</span>)</span>
 <span id="cb271-52"><a href="#cb271-52" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb271-53"><a href="#cb271-53" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Falls Fit nicht funktioniert</span></span>
+<span id="cb271-53"><a href="#cb271-53" aria-hidden="true" tabindex="-1"></a>    <span class="co"># if fit not functioning</span></span>
 <span id="cb271-54"><a href="#cb271-54" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="sc">!</span><span class="fu">inherits</span>(fit, <span class="st">"lm"</span>)) {</span>
 <span id="cb271-55"><a href="#cb271-55" aria-hidden="true" tabindex="-1"></a>      current_start <span class="ot">&lt;-</span> current_start <span class="sc">+</span> step_size</span>
 <span id="cb271-56"><a href="#cb271-56" aria-hidden="true" tabindex="-1"></a>      <span class="cf">next</span></span>
@@ -5850,13 +5850,13 @@ cos_part5            20.35740       20.35740       8.357402 102.33565</code></pr
 <span id="cb271-58"><a href="#cb271-58" aria-hidden="true" tabindex="-1"></a>    </span>
 <span id="cb271-59"><a href="#cb271-59" aria-hidden="true" tabindex="-1"></a>    coefs <span class="ot">&lt;-</span> <span class="fu">coef</span>(fit)</span>
 <span id="cb271-60"><a href="#cb271-60" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb271-61"><a href="#cb271-61" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Falls NA in Koeffizienten</span></span>
+<span id="cb271-61"><a href="#cb271-61" aria-hidden="true" tabindex="-1"></a>    <span class="co"># NA in coefficients</span></span>
 <span id="cb271-62"><a href="#cb271-62" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">any</span>(<span class="fu">is.na</span>(coefs[<span class="fu">c</span>(<span class="st">"(Intercept)"</span>, <span class="st">"cos_part"</span>, <span class="st">"sin_part"</span>)]))) {</span>
 <span id="cb271-63"><a href="#cb271-63" aria-hidden="true" tabindex="-1"></a>      current_start <span class="ot">&lt;-</span> current_start <span class="sc">+</span> step_size</span>
 <span id="cb271-64"><a href="#cb271-64" aria-hidden="true" tabindex="-1"></a>      <span class="cf">next</span></span>
 <span id="cb271-65"><a href="#cb271-65" aria-hidden="true" tabindex="-1"></a>    }</span>
 <span id="cb271-66"><a href="#cb271-66" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb271-67"><a href="#cb271-67" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Extrahiere Parameter</span></span>
+<span id="cb271-67"><a href="#cb271-67" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Extract Parameters</span></span>
 <span id="cb271-68"><a href="#cb271-68" aria-hidden="true" tabindex="-1"></a>    intercept <span class="ot">&lt;-</span> coefs[<span class="st">"(Intercept)"</span>]</span>
 <span id="cb271-69"><a href="#cb271-69" aria-hidden="true" tabindex="-1"></a>    beta      <span class="ot">&lt;-</span> coefs[<span class="st">"cos_part"</span>]</span>
 <span id="cb271-70"><a href="#cb271-70" aria-hidden="true" tabindex="-1"></a>    gamma     <span class="ot">&lt;-</span> coefs[<span class="st">"sin_part"</span>]</span>
@@ -5868,7 +5868,7 @@ cos_part5            20.35740       20.35740       8.357402 102.33565</code></pr
 <span id="cb271-76"><a href="#cb271-76" aria-hidden="true" tabindex="-1"></a>    max_time <span class="ot">&lt;-</span> acrophase_norm</span>
 <span id="cb271-77"><a href="#cb271-77" aria-hidden="true" tabindex="-1"></a>    min_time <span class="ot">&lt;-</span> (acrophase_norm <span class="sc">+</span> <span class="dv">12</span>) <span class="sc">%%</span> <span class="dv">24</span></span>
 <span id="cb271-78"><a href="#cb271-78" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb271-79"><a href="#cb271-79" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Ergebnisse speichern</span></span>
+<span id="cb271-79"><a href="#cb271-79" aria-hidden="true" tabindex="-1"></a>    <span class="co"># save results</span></span>
 <span id="cb271-80"><a href="#cb271-80" aria-hidden="true" tabindex="-1"></a>    id_results[[<span class="fu">length</span>(id_results) <span class="sc">+</span> <span class="dv">1</span>]] <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
 <span id="cb271-81"><a href="#cb271-81" aria-hidden="true" tabindex="-1"></a>      <span class="at">ID =</span> id,</span>
 <span id="cb271-82"><a href="#cb271-82" aria-hidden="true" tabindex="-1"></a>      <span class="at">Window_Start =</span> current_start,</span>
@@ -5881,20 +5881,20 @@ cos_part5            20.35740       20.35740       8.357402 102.33565</code></pr
 <span id="cb271-89"><a href="#cb271-89" aria-hidden="true" tabindex="-1"></a>      <span class="at">Intercept =</span> intercept</span>
 <span id="cb271-90"><a href="#cb271-90" aria-hidden="true" tabindex="-1"></a>    )</span>
 <span id="cb271-91"><a href="#cb271-91" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb271-92"><a href="#cb271-92" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Nächstes Fenster</span></span>
+<span id="cb271-92"><a href="#cb271-92" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Next window</span></span>
 <span id="cb271-93"><a href="#cb271-93" aria-hidden="true" tabindex="-1"></a>    current_start <span class="ot">&lt;-</span> current_start <span class="sc">+</span> step_size</span>
 <span id="cb271-94"><a href="#cb271-94" aria-hidden="true" tabindex="-1"></a>  }</span>
 <span id="cb271-95"><a href="#cb271-95" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb271-96"><a href="#cb271-96" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Ergebnisse der aktuellen ID speichern</span></span>
+<span id="cb271-96"><a href="#cb271-96" aria-hidden="true" tabindex="-1"></a>  <span class="co"># save results of current id</span></span>
 <span id="cb271-97"><a href="#cb271-97" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">length</span>(id_results) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
 <span id="cb271-98"><a href="#cb271-98" aria-hidden="true" tabindex="-1"></a>    all_results[[<span class="fu">length</span>(all_results) <span class="sc">+</span> <span class="dv">1</span>]] <span class="ot">&lt;-</span> <span class="fu">do.call</span>(rbind, id_results)</span>
 <span id="cb271-99"><a href="#cb271-99" aria-hidden="true" tabindex="-1"></a>  }</span>
 <span id="cb271-100"><a href="#cb271-100" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb271-101"><a href="#cb271-101" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb271-102"><a href="#cb271-102" aria-hidden="true" tabindex="-1"></a><span class="co"># Kombiniere alle Ergebnisse in ein DataFrame</span></span>
+<span id="cb271-102"><a href="#cb271-102" aria-hidden="true" tabindex="-1"></a><span class="co"># combine all results in DataFrame</span></span>
 <span id="cb271-103"><a href="#cb271-103" aria-hidden="true" tabindex="-1"></a>moving_window_all_ids_dst <span class="ot">&lt;-</span> <span class="fu">do.call</span>(rbind, all_results)</span>
 <span id="cb271-104"><a href="#cb271-104" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb271-105"><a href="#cb271-105" aria-hidden="true" tabindex="-1"></a><span class="co"># Optional: Ergebnisse ansehen</span></span>
+<span id="cb271-105"><a href="#cb271-105" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb271-106"><a href="#cb271-106" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(moving_window_all_ids_dst)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>           ID        Window_Start      Amp Acrophase_Rad Acrophase_Raw
@@ -6488,10 +6488,10 @@ SeasonSummr -0.216  0.459  0.518</code></pre>
 <section id="polar-plot-of-all-ids-with-seasons" class="level4">
 <h4 class="anchored" data-anchor-id="polar-plot-of-all-ids-with-seasons">Polar Plot of all IDs with Seasons</h4>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb307"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb307-1"><a href="#cb307-1" aria-hidden="true" tabindex="-1"></a>  <span class="co"># --- Feste Reihenfolge der IDs für Farben &amp; vertikale Platzierung ---</span></span>
+<div class="sourceCode cell-code" id="cb307"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb307-1"><a href="#cb307-1" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ------ Fixed ID order for colors &amp; vertical placement ---</span></span>
 <span id="cb307-2"><a href="#cb307-2" aria-hidden="true" tabindex="-1"></a>id_list <span class="ot">&lt;-</span> <span class="fu">sort</span>(<span class="fu">unique</span>(moving_window_all_ids<span class="sc">$</span>ID))</span>
 <span id="cb307-3"><a href="#cb307-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb307-4"><a href="#cb307-4" aria-hidden="true" tabindex="-1"></a><span class="co"># --- Zusammenfassung: Durchschnitt &amp; SD des Maxima pro Season &amp; ID ---</span></span>
+<span id="cb307-4"><a href="#cb307-4" aria-hidden="true" tabindex="-1"></a><span class="co"># --- Summary: mean &amp; SD of maxima per season &amp; ID ---</span></span>
 <span id="cb307-5"><a href="#cb307-5" aria-hidden="true" tabindex="-1"></a>season_summary <span class="ot">&lt;-</span> moving_window_all_ids <span class="sc">%&gt;%</span></span>
 <span id="cb307-6"><a href="#cb307-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(ID, Season) <span class="sc">%&gt;%</span></span>
 <span id="cb307-7"><a href="#cb307-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
@@ -6504,20 +6504,20 @@ SeasonSummr -0.216  0.459  0.518</code></pre>
 <span id="cb307-14"><a href="#cb307-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">xmin =</span> avg_max_rad <span class="sc">-</span> sd_max_rad,</span>
 <span id="cb307-15"><a href="#cb307-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">xmax =</span> avg_max_rad <span class="sc">+</span> sd_max_rad,</span>
 <span id="cb307-16"><a href="#cb307-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">ID =</span> <span class="fu">factor</span>(ID, <span class="at">levels =</span> id_list),</span>
-<span id="cb307-17"><a href="#cb307-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># dynamische vertikale Positionen, um Überlappung zu vermeiden</span></span>
+<span id="cb307-17"><a href="#cb307-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># dynamic vertical positions to avoid overlap</span></span>
 <span id="cb307-18"><a href="#cb307-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">rect_ymin =</span> <span class="fl">0.95</span> <span class="sc">-</span> <span class="fl">0.05</span> <span class="sc">*</span> (<span class="fu">as.numeric</span>(ID) <span class="sc">-</span> <span class="dv">1</span>),</span>
 <span id="cb307-19"><a href="#cb307-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">rect_ymax =</span> rect_ymin <span class="sc">+</span> <span class="fl">0.05</span></span>
 <span id="cb307-20"><a href="#cb307-20" aria-hidden="true" tabindex="-1"></a>  )</span>
 <span id="cb307-21"><a href="#cb307-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb307-22"><a href="#cb307-22" aria-hidden="true" tabindex="-1"></a><span class="co"># --- Zeiger-Daten extrahieren ---</span></span>
+<span id="cb307-22"><a href="#cb307-22" aria-hidden="true" tabindex="-1"></a><span class="co"># --- extract pointers ---</span></span>
 <span id="cb307-23"><a href="#cb307-23" aria-hidden="true" tabindex="-1"></a>pointers_seasons <span class="ot">&lt;-</span> season_summary <span class="sc">%&gt;%</span></span>
 <span id="cb307-24"><a href="#cb307-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(ID, Season, angle)</span>
 <span id="cb307-25"><a href="#cb307-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb307-26"><a href="#cb307-26" aria-hidden="true" tabindex="-1"></a><span class="co"># --- Rechteck-Daten extrahieren ---</span></span>
+<span id="cb307-26"><a href="#cb307-26" aria-hidden="true" tabindex="-1"></a><span class="co"># --- extract rects ---</span></span>
 <span id="cb307-27"><a href="#cb307-27" aria-hidden="true" tabindex="-1"></a>rects_seasons <span class="ot">&lt;-</span> season_summary <span class="sc">%&gt;%</span></span>
 <span id="cb307-28"><a href="#cb307-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(ID, Season, xmin, xmax, rect_ymin, rect_ymax)</span>
 <span id="cb307-29"><a href="#cb307-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb307-30"><a href="#cb307-30" aria-hidden="true" tabindex="-1"></a><span class="co"># --- Plot erstellen ---</span></span>
+<span id="cb307-30"><a href="#cb307-30" aria-hidden="true" tabindex="-1"></a><span class="co"># --- Plot---</span></span>
 <span id="cb307-31"><a href="#cb307-31" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>() <span class="sc">+</span></span>
 <span id="cb307-32"><a href="#cb307-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_rect</span>(<span class="at">data =</span> rects_seasons,</span>
 <span id="cb307-33"><a href="#cb307-33" aria-hidden="true" tabindex="-1"></a>            <span class="fu">aes</span>(<span class="at">xmin =</span> xmin, <span class="at">xmax =</span> xmax, <span class="at">ymin =</span> rect_ymin, <span class="at">ymax =</span> rect_ymax, <span class="at">fill =</span> ID),</span>
@@ -7636,8 +7636,8 @@ Attaching package: 'purrr'</code></pre>
 <span id="cb369-29"><a href="#cb369-29" aria-hidden="true" tabindex="-1"></a>             <span class="at">vjust =</span> <span class="sc">-</span><span class="fl">0.8</span>) <span class="sc">+</span></span>
 <span id="cb369-30"><a href="#cb369-30" aria-hidden="true" tabindex="-1"></a>   <span class="fu">scale_x_continuous</span>(<span class="at">breaks =</span> <span class="fu">seq</span>(<span class="dv">10</span>, <span class="fu">max</span>(plot_df<span class="sc">$</span>period_minutes, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="at">by =</span> <span class="dv">10</span>)) <span class="sc">+</span></span>
 <span id="cb369-31"><a href="#cb369-31" aria-hidden="true" tabindex="-1"></a>   <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Pooled Lomb–Scargle Spectrum (per night)"</span>,</span>
-<span id="cb369-32"><a href="#cb369-32" aria-hidden="true" tabindex="-1"></a>        <span class="at">subtitle =</span> <span class="st">"jede Nacht gleich gewichtet · ofac = 4"</span>,</span>
-<span id="cb369-33"><a href="#cb369-33" aria-hidden="true" tabindex="-1"></a>        <span class="at">x =</span> <span class="st">"Periode (Minuten)"</span>, <span class="at">y =</span> <span class="st">"Mean Power"</span>) <span class="sc">+</span></span>
+<span id="cb369-32"><a href="#cb369-32" aria-hidden="true" tabindex="-1"></a>        <span class="at">subtitle =</span> <span class="st">"each night weighted equally · ofac = 4"</span>,</span>
+<span id="cb369-33"><a href="#cb369-33" aria-hidden="true" tabindex="-1"></a>        <span class="at">x =</span> <span class="st">"Period (Minutes)"</span>, <span class="at">y =</span> <span class="st">"Mean Power"</span>) <span class="sc">+</span></span>
 <span id="cb369-34"><a href="#cb369-34" aria-hidden="true" tabindex="-1"></a>   <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
@@ -7691,7 +7691,7 @@ Attaching package: 'purrr'</code></pre>
 <span id="cb371-14"><a href="#cb371-14" aria-hidden="true" tabindex="-1"></a>   <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">45</span>, <span class="at">hjust =</span> <span class="dv">1</span>))<span class="sc">+</span></span>
 <span id="cb371-15"><a href="#cb371-15" aria-hidden="true" tabindex="-1"></a>   <span class="fu">labs</span>(</span>
 <span id="cb371-16"><a href="#cb371-16" aria-hidden="true" tabindex="-1"></a>     <span class="at">title =</span> <span class="st">"Lomb-Scargle Spectrum per ID"</span>,</span>
-<span id="cb371-17"><a href="#cb371-17" aria-hidden="true" tabindex="-1"></a>     <span class="at">x =</span> <span class="st">"Periode (Minuten)"</span>, <span class="at">y =</span> <span class="st">"Mean Power"</span></span>
+<span id="cb371-17"><a href="#cb371-17" aria-hidden="true" tabindex="-1"></a>     <span class="at">x =</span> <span class="st">"Period (Minutes)"</span>, <span class="at">y =</span> <span class="st">"Mean Power"</span></span>
 <span id="cb371-18"><a href="#cb371-18" aria-hidden="true" tabindex="-1"></a>   ) <span class="sc">+</span></span>
 <span id="cb371-19"><a href="#cb371-19" aria-hidden="true" tabindex="-1"></a>   <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
 <span id="cb371-20"><a href="#cb371-20" aria-hidden="true" tabindex="-1"></a>   <span class="fu">facet_wrap</span>(<span class="sc">~</span>ID)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -7783,7 +7783,7 @@ Attaching package: 'gridExtra'</code></pre>
 <div class="sourceCode cell-code" id="cb386"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb386-1"><a href="#cb386-1" aria-hidden="true" tabindex="-1"></a>PER_MIN <span class="ot">&lt;-</span> <span class="dv">10</span>     <span class="co"># min. period</span></span>
 <span id="cb386-2"><a href="#cb386-2" aria-hidden="true" tabindex="-1"></a>PER_MAX <span class="ot">&lt;-</span> <span class="dv">180</span>    <span class="co"># max. period</span></span>
 <span id="cb386-3"><a href="#cb386-3" aria-hidden="true" tabindex="-1"></a>DJ      <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">/</span><span class="dv">12</span>   <span class="co"># resolution</span></span>
-<span id="cb386-4"><a href="#cb386-4" aria-hidden="true" tabindex="-1"></a>STEP    <span class="ot">&lt;-</span> <span class="dv">5</span>      <span class="co"># Zielraster Minuten</span></span>
+<span id="cb386-4"><a href="#cb386-4" aria-hidden="true" tabindex="-1"></a>STEP    <span class="ot">&lt;-</span> <span class="dv">5</span>      <span class="co"># grid in min</span></span>
 <span id="cb386-5"><a href="#cb386-5" aria-hidden="true" tabindex="-1"></a>MINPTS  <span class="ot">&lt;-</span> <span class="dv">60</span>     <span class="co"># min measurement points</span></span>
 <span id="cb386-6"><a href="#cb386-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb386-7"><a href="#cb386-7" aria-hidden="true" tabindex="-1"></a></span>
@@ -7972,9 +7972,9 @@ Attaching package: 'gridExtra'</code></pre>
 <span id="cb395-45"><a href="#cb395-45" aria-hidden="true" tabindex="-1"></a>              <span class="at">inherit.aes =</span> <span class="cn">FALSE</span>, <span class="at">fill =</span> <span class="st">"grey90"</span>, <span class="at">alpha =</span> <span class="fl">0.65</span>) <span class="sc">+</span></span>
 <span id="cb395-46"><a href="#cb395-46" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_viridis</span>(<span class="at">name =</span> <span class="st">"Power"</span>, <span class="at">option =</span> <span class="st">"C"</span>, <span class="at">na.value =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
 <span id="cb395-47"><a href="#cb395-47" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_reverse</span>(<span class="at">expand =</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">0</span>)) <span class="sc">+</span></span>
-<span id="cb395-48"><a href="#cb395-48" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Wavelet Power (Morlet) – gepoolt (alle IDs × Nächte)"</span>,</span>
-<span id="cb395-49"><a href="#cb395-49" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"grau = außerhalb der COI (unsicher)"</span>,</span>
-<span id="cb395-50"><a href="#cb395-50" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Minuten seit Nachtbeginn"</span>, <span class="at">y =</span> <span class="st">"Periode (Minuten)"</span>) <span class="sc">+</span></span>
+<span id="cb395-48"><a href="#cb395-48" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Wavelet Power (Morlet) – pooled (all IDs × Nights)"</span>,</span>
+<span id="cb395-49"><a href="#cb395-49" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"grey = outside COI (unreliable)"</span>,</span>
+<span id="cb395-50"><a href="#cb395-50" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Minutes since Start of Night"</span>, <span class="at">y =</span> <span class="st">"Period (Minutes)"</span>) <span class="sc">+</span></span>
 <span id="cb395-51"><a href="#cb395-51" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span>
 <span id="cb395-52"><a href="#cb395-52" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb395-53"><a href="#cb395-53" aria-hidden="true" tabindex="-1"></a><span class="co"># Global Wavelet Spectrum , smoothed + Peaks</span></span>
@@ -7991,9 +7991,9 @@ Attaching package: 'gridExtra'</code></pre>
 <span id="cb395-64"><a href="#cb395-64" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">data =</span> pk_all, <span class="fu">aes</span>(<span class="at">y =</span> power_smooth), <span class="at">size =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
 <span id="cb395-65"><a href="#cb395-65" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="at">data =</span> pk_all, <span class="fu">aes</span>(<span class="at">y =</span> power_smooth, <span class="at">label =</span> label), <span class="at">vjust =</span> <span class="sc">-</span><span class="fl">0.8</span>) <span class="sc">+</span></span>
 <span id="cb395-66"><a href="#cb395-66" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="at">breaks =</span> <span class="fu">seq</span>(PER_MIN, PER_MAX, <span class="at">by =</span> <span class="dv">10</span>)) <span class="sc">+</span></span>
-<span id="cb395-67"><a href="#cb395-67" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Global Wavelet Spectrum – pooled (alle IDs × Nächte)"</span>,</span>
-<span id="cb395-68"><a href="#cb395-68" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"jede Nacht gleich gewichtet · nur innerhalb COI"</span>,</span>
-<span id="cb395-69"><a href="#cb395-69" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Periode (Minuten)"</span>, <span class="at">y =</span> <span class="st">"Mean Power"</span>) <span class="sc">+</span></span>
+<span id="cb395-67"><a href="#cb395-67" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Global Wavelet Spectrum – pooled (all IDs × Nights)"</span>,</span>
+<span id="cb395-68"><a href="#cb395-68" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"every night weighted equally · inside COI"</span>,</span>
+<span id="cb395-69"><a href="#cb395-69" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Period (Minutes)"</span>, <span class="at">y =</span> <span class="st">"Mean Power"</span>) <span class="sc">+</span></span>
 <span id="cb395-70"><a href="#cb395-70" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span>
 <span id="cb395-71"><a href="#cb395-71" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb395-72"><a href="#cb395-72" aria-hidden="true" tabindex="-1"></a><span class="co"># show and save</span></span>
@@ -8015,9 +8015,9 @@ Attaching package: 'gridExtra'</code></pre>
 <div class="sourceCode cell-code" id="cb397"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb397-1"><a href="#cb397-1" aria-hidden="true" tabindex="-1"></a>p_per_id <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(all_gws_pooled, <span class="fu">aes</span>(period, mean_power, <span class="at">color =</span> ID)) <span class="sc">+</span></span>
 <span id="cb397-2"><a href="#cb397-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">alpha =</span> <span class="fl">0.9</span>) <span class="sc">+</span></span>
 <span id="cb397-3"><a href="#cb397-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="at">breaks =</span> <span class="fu">seq</span>(PER_MIN, PER_MAX, <span class="at">by =</span> <span class="dv">10</span>)) <span class="sc">+</span></span>
-<span id="cb397-4"><a href="#cb397-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Global Wavelet Spectrum – pro ID (über Nächte gemittelt)"</span>,</span>
-<span id="cb397-5"><a href="#cb397-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"jede Nacht gleich gewichtet"</span>,</span>
-<span id="cb397-6"><a href="#cb397-6" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Periode (Minuten)"</span>, <span class="at">y =</span> <span class="st">"Mean Power"</span>) <span class="sc">+</span></span>
+<span id="cb397-4"><a href="#cb397-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Global Wavelet Spectrum – per ID (polled across nights)"</span>,</span>
+<span id="cb397-5"><a href="#cb397-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"every night weighted equally"</span>,</span>
+<span id="cb397-6"><a href="#cb397-6" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Period (Minutes)"</span>, <span class="at">y =</span> <span class="st">"Mean Power"</span>) <span class="sc">+</span></span>
 <span id="cb397-7"><a href="#cb397-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span>
 <span id="cb397-8"><a href="#cb397-8" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb397-9"><a href="#cb397-9" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(p_per_id)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
